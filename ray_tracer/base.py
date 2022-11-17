@@ -15,18 +15,22 @@ class RaypleType(IntEnum):  # noqa: D101
 @dataclass(frozen=True, slots=True)
 class Rayple:
     """
-    The Ray Tracer's generic ordered list of (x,y,z) things.
+    The Ray Tracer's generic ordered list of (x,y,z) things, classified by `Rayple.w`.
 
-    The following operations are supported:
+    The following generic operations are supported:
         * Vector/Point addition
-            * Adding two points is undefined
-            * Scalar addition is undefined
+            * Adding two Points is undefined
         * Vector/Point subtraction
-            * Subtracting a point from a vector is undefined
-            * Scalar subtraction is undefined
+            * Subtracting a Point from a Vector is undefined
         * Negation
+
+    The following Vector-only helpers are supported:
         * Scalar multiplication
         * Scalar division
+        * Magnitude (implemented by `__abs__`)
+        * Normalization
+        * Dot product
+        * Cross product
     """
 
     x: NUMERIC_T
@@ -108,6 +112,59 @@ class Rayple:
             w=self.w,
         )
 
+    def __abs__(self) -> float:
+        if self.w == RaypleType.POINT:
+            raise ValueError("Points have no magnitude.")
+
+        return math.sqrt(self.x**2 + self.y**2 + self.z**2)
+
+    def normalize(self) -> Rayple:
+        """
+        Normalize into a unit vector.
+
+        NOTE: This method is undefined for Points.
+        """
+        if self.w == RaypleType.POINT:
+            raise ValueError("Canont normalize a point.")
+
+        return Rayple(
+            x=self.x / abs(self),
+            y=self.y / abs(self),
+            z=self.z / abs(self),
+            w=self.w,
+        )
+
+
+def dot(left: Rayple, right: Rayple) -> NUMERIC_T:
+    """
+    Calculate the dot product of two vectors.
+
+    NOTE: This method is undefined for Points.
+    See: https://en.wikipedia.org/wiki/Dot_product
+    """
+    if left.w == RaypleType.POINT or right.w == RaypleType.POINT:
+        raise ValueError(f"Both operands must be vectors. Received: {left.w} and {right.w}.")
+
+    return (left.x * right.x) + (left.y * right.y) + (left.z * right.z)
+
+
+def cross(left: Rayple, right: Rayple) -> Rayple:
+    """
+    Calculate the cross product of two vectors.
+
+    NOTE: This method is undefined for Points.
+    See: https://en.wikipedia.org/wiki/Cross_product
+    """
+    if left.w == RaypleType.POINT or right.w == RaypleType.POINT:
+        raise ValueError(f"Both operands must be vectors. Received: {left.w} and {right.w}.")
+
+    return Rayple(
+        x=(left.y * right.z - left.z * right.y),
+        y=(left.z * right.x - left.x * right.z),
+        z=(left.x * right.y - left.y * right.x),
+        w=RaypleType.VECTOR,
+    )
+
 
 def point(x: NUMERIC_T, y: NUMERIC_T, z: NUMERIC_T) -> Rayple:
     """Shortcut for a point `Rayple` (`w = 1`)."""
@@ -117,3 +174,11 @@ def point(x: NUMERIC_T, y: NUMERIC_T, z: NUMERIC_T) -> Rayple:
 def vector(x: NUMERIC_T, y: NUMERIC_T, z: NUMERIC_T) -> Rayple:
     """Shortcut for a vector `Rayple` (`w = 0`)."""
     return Rayple(x, y, z, RaypleType.VECTOR)
+
+
+def is_point(inp: Rayple) -> bool:  # noqa: D103
+    return inp.w == RaypleType.POINT
+
+
+def is_vector(inp: Rayple) -> bool:  # noqa: D103
+    return inp.w == RaypleType.VECTOR

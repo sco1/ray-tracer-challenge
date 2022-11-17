@@ -1,6 +1,8 @@
+import math
+
 import pytest
 
-from ray_tracer.base import Rayple, RaypleType, point, vector
+from ray_tracer.base import Rayple, RaypleType, is_point, is_vector, point, vector, dot, cross
 
 NUMERIC_T = int | float
 
@@ -12,6 +14,17 @@ def test_rayple_components() -> None:
     assert rp.y == pytest.approx(-4.2)
     assert rp.z == pytest.approx(3.1)
     assert rp.w == RaypleType.POINT
+
+
+def test_rayple_helpers() -> None:
+    p = point(1, 2, 3)
+    v = vector(1, 2, 3)
+
+    assert is_point(p)
+    assert not is_point(v)
+
+    assert is_vector(v)
+    assert not is_vector(p)
 
 
 EQ_CASES = (
@@ -133,3 +146,72 @@ def test_scalar_rdivision_raises() -> None:
     p = point(1, -2, 3)
     with pytest.raises(TypeError):
         2 / p  # type: ignore[operator]
+
+
+SQ_14 = math.sqrt(14)
+
+VECTOR_MAG_CASES = (
+    (vector(0, 1, 0), 1),
+    (vector(0, 0, 1), 1),
+    (vector(1, 2, 3), SQ_14),
+    (vector(1, -2, 3), SQ_14),
+    (vector(-1, -2, -3), SQ_14),
+)
+
+
+@pytest.mark.parametrize(("vec", "truth"), VECTOR_MAG_CASES)
+def test_vector_magnitude(vec: Rayple, truth: NUMERIC_T) -> None:
+    assert abs(vec) == pytest.approx(truth)
+
+
+def test_point_magnitude_raises() -> None:
+    with pytest.raises(ValueError):
+        abs(point(1, 2, 3))
+
+
+VECTOR_NORM_CASES = (
+    (vector(4, 0, 0), vector(1, 0, 0)),
+    (vector(1, 2, 3), vector(1 / SQ_14, 2 / SQ_14, 3 / SQ_14)),
+)
+
+
+@pytest.mark.parametrize(("vec", "truth"), VECTOR_NORM_CASES)
+def test_vector_normalize(vec: Rayple, truth: Rayple) -> None:
+    assert vec.normalize() == truth
+
+
+def test_vector_norm_mag() -> None:
+    v = vector(1, 2, 3)
+    assert abs(v.normalize()) == pytest.approx(1)
+
+
+def test_point_normalize_raises() -> None:
+    with pytest.raises(ValueError):
+        point(1, 2, 3).normalize()
+
+
+def test_dot_product() -> None:
+    v1 = vector(1, 2, 3)
+    v2 = vector(2, 3, 4)
+
+    assert dot(v1, v2) == 20
+
+
+def test_dot_product_point_raises() -> None:
+    p = point(1, 2, 3)
+    with pytest.raises(ValueError):
+        dot(p, p)
+
+
+def test_cross_product() -> None:
+    v1 = vector(1, 2, 3)
+    v2 = vector(2, 3, 4)
+
+    assert cross(v1, v2) == vector(-1, 2, -1)
+    assert cross(v2, v1) == vector(1, -2, 1)
+
+
+def test_cross_product_point_raises() -> None:
+    p = point(1, 2, 3)
+    with pytest.raises(ValueError):
+        cross(p, p)
