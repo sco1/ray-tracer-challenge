@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "Ray Tracer Challenge"
+name = "Ray-Tracer-Challenge"
 version = "0.1.0"
 description = "A Python Implementation of Jamis Buck's Ray Tracer Challenge"
 authors = ["sco1 <sco1.git@gmail.com>"]
@@ -20,6 +20,11 @@ classifiers = [
     "Topic :: Multimedia :: Graphics :: 3D Rendering",
     "Topic :: Scientific/Engineering :: Visualization",
     "Typing :: Typed",
+]
+packages = [{include="ray_tracer"}]
+
+include = [
+    {path = "./CHANGELOG.md", format = "sdist"}
 ]
 
 [tool.poetry.dependencies]
