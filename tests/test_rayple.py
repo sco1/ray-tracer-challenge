@@ -2,7 +2,7 @@ import math
 
 import pytest
 
-from ray_tracer.base import (
+from ray_tracer.rayple import (
     Rayple,
     RaypleType,
     color,
@@ -25,6 +25,11 @@ def test_rayple_components() -> None:
     assert rp.y == pytest.approx(-4.2)
     assert rp.z == pytest.approx(3.1)
     assert rp.w == RaypleType.POINT
+
+
+def test_rayple_iterable() -> None:
+    c = color(1, 2, 3)
+    assert list(c) == [1, 2, 3]
 
 
 def test_rayple_helpers() -> None:
@@ -157,9 +162,17 @@ def test_multipliciation(
     assert (left * right) == truth
 
 
-def test_nonscalar_noncolor_multiplication_raises() -> None:
+def test_nonscalar_multiplication_raises() -> None:
+    with pytest.raises(TypeError):
+        point(1, 2, 3) * None
+
+
+def test_noncolor_multiplication_raises() -> None:
     with pytest.raises(TypeError):
         point(1, 2, 3) * point(1, 2, 3)
+
+    with pytest.raises(TypeError):
+        color(1, 2, 3) * point(1, 2, 3)
 
 
 def test_scalar_division() -> None:

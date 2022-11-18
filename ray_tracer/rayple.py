@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+import typing as t
 from dataclasses import dataclass
 from enum import IntEnum
 
@@ -19,6 +20,8 @@ class Rayple:
     The Ray Tracer's generic ordered list of (x,y,z) things, classified by `Rayple.w`.
 
     For simplicity, Colors are included under this class, where (x,y,z)<->(r,g,b).
+
+    Iterating over a `Rayple` yields its (x,y,z).
 
     The following generic operations are supported:
         * Addition
@@ -159,6 +162,11 @@ class Rayple:
 
         return math.sqrt(self.x**2 + self.y**2 + self.z**2)
 
+    def __iter__(self) -> t.Generator[NUMERIC_T, None, None]:
+        yield self.x
+        yield self.y
+        yield self.z
+
     def normalize(self) -> Rayple:
         """Normalize into a unit Vector."""
         if self.w != RaypleType.VECTOR:
@@ -211,9 +219,9 @@ def vector(x: NUMERIC_T, y: NUMERIC_T, z: NUMERIC_T) -> Rayple:
     return Rayple(x, y, z, RaypleType.VECTOR)
 
 
-def color(red: NUMERIC_T, blue: NUMERIC_T, green: NUMERIC_T) -> Rayple:
+def color(red: NUMERIC_T, green: NUMERIC_T, blue: NUMERIC_T) -> Rayple:
     """Shortcut for a Color `Rayple` (`w = 2`)."""
-    return Rayple(red, blue, green, RaypleType.COLOR)
+    return Rayple(red, green, blue, RaypleType.COLOR)
 
 
 def is_point(inp: Rayple) -> bool:  # noqa: D103
