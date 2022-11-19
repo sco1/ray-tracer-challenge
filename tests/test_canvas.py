@@ -13,7 +13,7 @@ def test_canvas_create() -> None:
 
     assert c.width == 10
     assert c.height == 20
-    assert c._pixels.shape == (10, 20, 3)
+    assert c._pixels.shape == (20, 10, 3)  # numpy indexing is row-first
 
 
 def test_write_pixel() -> None:
@@ -21,12 +21,12 @@ def test_write_pixel() -> None:
     red = color(1, 0, 0)
 
     c.write_pixel(2, 3, red)
-    assert c._pixels[2, 3, :] == pytest.approx((1, 0, 0))
+    assert c._pixels[3, 2, :] == pytest.approx((1, 0, 0))  # numpy indexing is row-first
 
 
 def test_get_pixel() -> None:
     c = Canvas(10, 20)
-    c._pixels[2, 3, :] = (1, 0, 0)
+    c._pixels[3, 2, :] = (1, 0, 0)  # numpy indexing is row-first
 
     red = color(1, 0, 0)
     assert c.pixel_at(2, 3) == red

@@ -13,27 +13,31 @@ class Canvas:  # noqa: D101
         self.width = width
         self.height = height
 
-        self._pixels = np.zeros(shape=(width, height, 3))
+        self._pixels = np.zeros(shape=(height, width, 3))
 
     def pixel_at(self, x: int, y: int) -> Rayple:
         """Return the Color value for the queried pixel."""
-        return color(*self._pixels[x, y, :])
+        return color(*self._pixels[y, x, :])
 
     def write_pixel(self, x: int, y: int, color: Rayple) -> None:
         """Map the provided Color value to the specified pixel location."""
         if color.w != RaypleType.COLOR:
             raise ValueError(f"Expected Color Rayple. Received: {type(color.w)}")
 
-        self._pixels[x, y, :] = (*color,)
+        self._pixels[y, x, :] = (*color,)
 
-    def to_ppm(self, out_filepath: Path) -> None:
+    def to_ppm(self, out_filepath: Path, maxlen: int | None = 70) -> None:
         """
         Output the current canvas as a Portable Pixmap (PPM).
+
+        If `maxlen` is not `None`, an attempt is made to limit each data row to a maximum length of
+        `maxlen` characters.
 
         See: https://en.wikipedia.org/wiki/Netpbm for more info on the file format.
         """
         full_text = (
-            f"{_build_ppm_header(self.width, self.height)}\n{_pixels_to_ppm(self._pixels)}\n"
+            f"{_build_ppm_header(self.width, self.height)}\n"
+            f"{_pixels_to_ppm(self._pixels, maxlen=maxlen)}\n"
         )
         out_filepath.write_text(full_text)
 
@@ -74,7 +78,7 @@ def _pixels_to_ppm(pixels: np.ndarray, maxval: int = 255, maxlen: int | None = 7
 
     # There's probably a way to get numpy to do what we want but this is fine
     # Temporarily remove numpy's print setting since we're manually delimiting
-    with np.printoptions(linewidth=np.inf):  # type: ignore[arg-type]
+    with np.printoptions(linewidth=np.inf, threshold=np.inf):  # type: ignore[arg-type]
         tmp = np.array2string(scaled)
         tmp = "\n".join(" ".join(row.strip("[] ").split()) for row in tmp.splitlines())
 
