@@ -1,5 +1,6 @@
 import math
 
+import numpy as np
 import pytest
 
 from ray_tracer.rayple import (
@@ -67,6 +68,26 @@ EQ_CASES = (
 @pytest.mark.parametrize(("left", "right", "truth"), EQ_CASES)
 def test_rayple_eq(left: Rayple, right: Rayple | int, truth: bool) -> None:
     assert (left == right) == truth
+
+
+def test_rayple_to_np() -> None:
+    p = point(1, 2, 3)
+    truth_array = np.array((1, 2, 3, 1))
+
+    pytest.approx(p.as_array, truth_array)
+
+
+def test_rayple_from_np() -> None:
+    arr = np.array((1, 2, 3, 1))
+    truth_p = point(1, 2, 3)
+
+    assert Rayple.from_np(arr) == truth_p
+
+
+def test_rayple_from_np_nonvector_raises() -> None:
+    arr = np.array((1, 2, 3))
+    with pytest.raises(ValueError):
+        _ = Rayple.from_np(arr)
 
 
 SUM_CASES = (

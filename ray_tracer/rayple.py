@@ -5,7 +5,9 @@ import typing as t
 from dataclasses import dataclass
 from enum import IntEnum
 
-NUMERIC_T = int | float
+import numpy as np
+
+NUMERIC_T: t.TypeAlias = int | float
 
 
 class RaypleType(IntEnum):  # noqa: D101
@@ -49,7 +51,7 @@ class Rayple:
     x: NUMERIC_T
     y: NUMERIC_T
     z: NUMERIC_T
-    w: RaypleType
+    w: RaypleType | int
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Rayple):
@@ -57,10 +59,10 @@ class Rayple:
 
         return all(
             (
+                self.w == other.w,
                 math.isclose(self.x, other.x),
                 math.isclose(self.y, other.y),
                 math.isclose(self.z, other.z),
-                self.w == other.w,
             )
         )
 
@@ -178,6 +180,21 @@ class Rayple:
             z=self.z / abs(self),
             w=self.w,
         )
+
+    def as_array(self) -> np.ndarray:
+        """Provide the `Rayple` as a `1x4` array."""
+        return np.array((self.x, self.y, self.z, self.w))
+
+    @classmethod
+    def from_np(cls, in_vec: np.ndarray) -> Rayple:
+        """Create an instance from a NumPy vector, ensuring that `w` is an integer."""
+        if in_vec.size != 4:
+            raise ValueError(f"Input vector must have 4 elements, received: {in_vec.size}")
+
+        # Unpack manually since mypy can't reason with the splat
+        x, y, z = in_vec[:3]
+        w = int(in_vec[3])  # Cast may be fragile in some cases, but is workable for now
+        return Rayple(x, y, z, w)
 
 
 def dot(left: Rayple, right: Rayple) -> NUMERIC_T:

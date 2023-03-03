@@ -4,3 +4,6 @@
 [![Open in Visual Studio Code](https://img.shields.io/badge/Open%20in-VSCode.dev-blue)](https://vscode.dev/github.com/sco1/ray-tracer-challenge)
 
 A Python implementation of Jamis Buck's [The Ray Tracer Challenge](https://pragprog.com/titles/jbtracer/the-ray-tracer-challenge/)
+
+## Deviations From The Text
+* Matrix functionality is provided by [NumPy](https://numpy.org/) rather than a custom implementation as described by Chapter 3.
