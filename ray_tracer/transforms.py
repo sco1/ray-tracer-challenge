@@ -6,9 +6,8 @@ from math import cos, sin
 
 import numpy as np
 
+from ray_tracer import NUMERIC_T
 from ray_tracer.rayple import Rayple
-
-NUMERIC_T: t.TypeAlias = int | float
 
 ZERO_TOL = 1e-16
 

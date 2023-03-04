@@ -3,6 +3,7 @@ import math
 import numpy as np
 import pytest
 
+from ray_tracer import NUMERIC_T
 from ray_tracer.rayple import (
     Rayple,
     RaypleType,
@@ -15,8 +16,6 @@ from ray_tracer.rayple import (
     point,
     vector,
 )
-
-NUMERIC_T = int | float
 
 
 def test_rayple_components() -> None:
@@ -74,7 +73,7 @@ def test_rayple_to_np() -> None:
     p = point(1, 2, 3)
     truth_array = np.array((1, 2, 3, 1))
 
-    pytest.approx(p.as_array, truth_array)
+    assert p.as_array() == pytest.approx(truth_array)
 
 
 def test_rayple_from_np() -> None:

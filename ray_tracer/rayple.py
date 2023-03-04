@@ -7,7 +7,7 @@ from enum import IntEnum
 
 import numpy as np
 
-NUMERIC_T: t.TypeAlias = int | float
+from ray_tracer import NUMERIC_T
 
 
 class RaypleType(IntEnum):  # noqa: D101
