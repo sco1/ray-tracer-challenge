@@ -1,5 +1,5 @@
 # Ray Tracer Challenge
-[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
+[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/sco1/ray-tracer-challenge/main.svg)](https://results.pre-commit.ci/latest/github/sco1/ray-tracer-challenge/main)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-black)](https://github.com/psf/black)
 [![Open in Visual Studio Code](https://img.shields.io/badge/Open%20in-VSCode.dev-blue)](https://vscode.dev/github.com/sco1/ray-tracer-challenge)
 

@@ -2,12 +2,15 @@ from __future__ import annotations
 
 import typing as t
 from dataclasses import dataclass
+from math import cos, sin
 
 import numpy as np
 
 from ray_tracer.rayple import Rayple
 
 NUMERIC_T: t.TypeAlias = int | float
+
+ZERO_TOL = 1e-16
 
 
 @dataclass(slots=True)
@@ -16,12 +19,27 @@ class Matrix:
 
     matrix: np.ndarray
 
-    def __mul__(self, other: object) -> Rayple:
-        if not isinstance(other, Rayple):
-            return NotImplemented
+    @t.overload
+    def __mul__(self, other: Rayple) -> Rayple:
+        ...
 
-        transformed = self.matrix.dot(other.as_array())
-        return Rayple.from_np(transformed)
+    @t.overload
+    def __mul__(self, other: Matrix) -> Matrix:
+        ...
+
+    def __mul__(self, other: object) -> Rayple | Matrix:
+        if isinstance(other, Rayple):
+            transformed = self.matrix.dot(other.as_array())
+            transformed[np.abs(transformed) < ZERO_TOL] = 0
+
+            return Rayple.from_np(transformed)
+        elif isinstance(other, Matrix):
+            chained = self.matrix.dot(other.matrix)
+            chained[np.abs(chained) < ZERO_TOL] = 0
+
+            return Matrix(chained)
+        else:
+            return NotImplemented
 
     def inv(self) -> Matrix:
         """Return an inverted `Matrix` instance."""
@@ -40,5 +58,76 @@ def scaling(x: NUMERIC_T, y: NUMERIC_T, z: NUMERIC_T) -> Matrix:
     """Generate a `4x4` scaling matrix for the provided scaling components."""
     matrix = np.identity(4)
     np.fill_diagonal(matrix, (x, y, z, 1))
+
+    return Matrix(matrix)
+
+
+def rot_x(mag: float) -> Matrix:
+    """
+    Generate a `4x4` 3D rotation matrix (left-hand rule) around the x-axis.
+
+    NOTE: Rotation magnitude is assumed to be given in radians.
+    """
+    matrix = np.identity(4)
+    np.fill_diagonal(matrix, (1, cos(mag), cos(mag), 1))
+    np.fill_diagonal(np.flipud(matrix), (0, sin(mag), -sin(mag), 0))  # anti-diagonal
+
+    return Matrix(matrix)
+
+
+def rot_y(mag: float) -> Matrix:
+    """
+    Generate a `4x4` 3D rotation matrix (left-hand rule) around the y-axis.
+
+    NOTE: Rotation magnitude is assumed to be given in radians.
+    """
+    matrix = np.identity(4)
+    matrix[0, :] = (cos(mag), 0, sin(mag), 0)
+    matrix[2, :] = (-sin(mag), 0, cos(mag), 0)
+
+    return Matrix(matrix)
+
+
+def rot_z(mag: float) -> Matrix:
+    """
+    Generate a `4x4` 3D rotation matrix (left-hand rule) around the z-axis.
+
+    NOTE: Rotation magnitude is assumed to be given in radians.
+    """
+    matrix = np.identity(4)
+    matrix[0, :] = (cos(mag), -sin(mag), 0, 0)
+    matrix[1, :] = (sin(mag), cos(mag), 0, 0)
+
+    return Matrix(matrix)
+
+
+def rot(x: float = 0, y: float = 0, z: float = 0) -> Matrix:
+    """
+    Generate a `4x4` 3D rotation matrix (left-hand rule) around the origin.
+
+    NOTE: Rotation magnitudes are assumed to be given in radians.
+    """
+    # Reverse the dot product order so we do x-plane, y-plane, then z-plane rotation
+    matrix = rot_z(z) * rot_y(y) * rot_x(x)
+    return matrix
+
+
+def shearing(
+    x_y: NUMERIC_T = 0,
+    x_z: NUMERIC_T = 0,
+    y_x: NUMERIC_T = 0,
+    y_z: NUMERIC_T = 0,
+    z_x: NUMERIC_T = 0,
+    z_y: NUMERIC_T = 0,
+) -> Matrix:
+    """Generate a shearing (skew) transformation matrix for the provided component proportions."""
+    matrix = np.array(
+        [
+            [1, x_y, x_z, 0],
+            [y_x, 1, y_z, 0],
+            [z_x, z_y, 1, 0],
+            [0, 0, 0, 1],
+        ]
+    )
 
     return Matrix(matrix)
