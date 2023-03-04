@@ -45,4 +45,4 @@ htmlcov
 # mypy
 .mypy_cache/
 
-sample_data/
+*.ppm

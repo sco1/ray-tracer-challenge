@@ -26,7 +26,7 @@ def cannon() -> None:
         if 0 <= y_loc <= c.height:
             c.write_pixel(round(pos.x), c.height - round(pos.y), color(1, 0, 0))
 
-    c.to_ppm(Path("./chapter_2.ppm"))
+    c.to_ppm(Path("./demos/out/chapter_2.ppm"))
 
 
 if __name__ == "__main__":
