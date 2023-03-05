@@ -44,6 +44,11 @@ class Matrix:
         """Return an inverted `Matrix` instance."""
         return Matrix(np.linalg.inv(self.matrix))
 
+    @classmethod
+    def identity(cls) -> Matrix:
+        """Initialize an identity matrix."""
+        return cls(np.identity(4))
+
 
 def translation(x: NUMERIC_T, y: NUMERIC_T, z: NUMERIC_T) -> Matrix:
     """Generate a `4x4` translation matrix for the provided shift components."""

@@ -3,6 +3,7 @@ import pytest
 from ray_tracer import NUMERIC_T
 from ray_tracer.rayple import Rayple, point, vector
 from ray_tracer.rays import Ray
+from ray_tracer.transforms import Matrix, scaling, translation
 
 
 def test_ray_components() -> None:
@@ -43,3 +44,15 @@ def test_ray_position(t: NUMERIC_T, truth_position: Rayple) -> None:
     r = Ray(origin, direction)
 
     assert r.position(t) == truth_position
+
+
+RAY_TRANSFORMATION_CASES = (
+    (translation(3, 4, 5), Ray(point(4, 6, 8), vector(0, 1, 0))),
+    (scaling(2, 3, 4), Ray(point(2, 6, 12), vector(0, 3, 0))),
+)
+
+
+@pytest.mark.parametrize(("t_matrix", "truth_ray"), RAY_TRANSFORMATION_CASES)
+def test_ray_transformation(t_matrix: Matrix, truth_ray: Ray) -> None:
+    r = Ray(point(1, 2, 3), vector(0, 1, 0))
+    assert r.transform(t_matrix) == truth_ray
