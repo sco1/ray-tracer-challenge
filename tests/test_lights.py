@@ -32,3 +32,36 @@ def test_lighting(eye_vec: Rayple, light: PointLight, truth_lit: Rayple) -> None
 
     assert lit.w == RaypleType.COLOR
     assert lit == truth_lit
+
+
+def test_lighting_nonpoint_surface_raises() -> None:
+    with pytest.raises(ValueError):
+        _ = lighting(
+            material=BASE_MATERIAL,
+            light=LIGHT_P(point(0, 0, -10)),
+            surf_pos=vector(0, 0, 1),  # Should be a point
+            eye_vec=vector(0, 0, -1),
+            normal=BASE_NORM,
+        )
+
+
+def test_lighting_nonvector_eye_raises() -> None:
+    with pytest.raises(ValueError):
+        _ = lighting(
+            material=BASE_MATERIAL,
+            light=LIGHT_P(point(0, 0, -10)),
+            surf_pos=BASE_POSITION,
+            eye_vec=point(0, 0, 1),  # Should be a vector
+            normal=BASE_NORM,
+        )
+
+
+def test_lighting_nonvector_normal_raises() -> None:
+    with pytest.raises(ValueError):
+        _ = lighting(
+            material=BASE_MATERIAL,
+            light=LIGHT_P(point(0, 0, -10)),
+            surf_pos=BASE_POSITION,
+            eye_vec=vector(0, 0, -1),
+            normal=point(0, 0, 1),  # Should be a vector
+        )

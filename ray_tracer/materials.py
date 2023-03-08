@@ -9,10 +9,11 @@ class Material:
     """
     Represent material attributes from the Phong reflection model.
 
-    Reflecton attributes are assumed to be non-zero; `ambient`, `diffuse`, and `specular` values are
-    typically between `0` and `1`, and `shininess` values are typically between `10` and `200`.
+    Reflecton attributes are assumed to be positive and non-zero; `ambient`, `diffuse`, and
+    `specular` values are typically between `0` and `1`, and `shininess` values are typically
+    between `10` and `200`.
 
-    Attribute magnitudes are not enforced beyond ensuring they are non-zero.
+    Attribute magnitudes are not enforced beyond ensuring they are positive and non-zero.
     """
 
     color: Rayple = color(1, 1, 1)

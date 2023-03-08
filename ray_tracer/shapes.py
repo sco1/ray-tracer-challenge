@@ -1,4 +1,5 @@
 import math
+from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 
 from ray_tracer.intersections import Intersection, Intersections
@@ -8,8 +9,17 @@ from ray_tracer.rays import Ray
 from ray_tracer.transforms import Matrix
 
 
-class ShapeBase:  # noqa: D101
-    ...
+class ShapeBase(ABC):  # noqa: D101  # pragma: no cover
+    transform: Matrix
+    material: Material
+
+    @abstractmethod
+    def intersect(self, ray: Ray) -> Intersections:  # noqa: D102
+        ...
+
+    @abstractmethod
+    def normal_at(self, query: Rayple) -> Rayple:  # noqa: D102
+        ...
 
 
 @dataclass(frozen=True, slots=True, eq=False)
