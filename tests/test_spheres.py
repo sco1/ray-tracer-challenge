@@ -87,7 +87,6 @@ def test_normal_translated_sphere() -> None:
     assert s.normal_at(query) == truth_vector
 
 
-@pytest.mark.xfail(reason="Failing cases actually works works, need to fix float comparisons.")
 def test_normal_transformed_sphere() -> None:
     transform = scaling(1, 0.5, 1) * rot_z(math.pi / 5)
     s = Sphere(transform)

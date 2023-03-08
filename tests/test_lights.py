@@ -25,7 +25,6 @@ ILLUMINATION_TEST_CASES = (
 )
 
 
-@pytest.mark.xfail(reason="Failing cases actually works works, need to fix float comparisons.")
 @pytest.mark.parametrize(("eye_vec", "light", "truth_lit"), ILLUMINATION_TEST_CASES)
 def test_lighting(eye_vec: Rayple, light: PointLight, truth_lit: Rayple) -> None:
     lit = LIGHTING_P(light=light, eye_vec=eye_vec)

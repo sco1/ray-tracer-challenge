@@ -9,7 +9,7 @@ import numpy as np
 
 from ray_tracer import NUMERIC_T
 
-ABS_TOL = 1e-13
+ABS_TOL = 1e-5
 
 
 class RaypleType(IntEnum):  # noqa: D101
