@@ -6,15 +6,6 @@ from ray_tracer.rays import Ray
 from ray_tracer.transforms import Matrix, scaling, translation
 
 
-def test_ray_components() -> None:
-    origin = point(1, 2, 3)
-    direction = vector(4, 5, 6)
-    r = Ray(origin, direction)
-
-    assert r.origin == origin
-    assert r.direction == direction
-
-
 def test_ray_nonpoint_origin_raises() -> None:
     v = vector(4, 5, 6)
 

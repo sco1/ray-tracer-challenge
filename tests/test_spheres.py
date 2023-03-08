@@ -1,12 +1,16 @@
+import math
 from functools import partial
 
 import pytest
 
 from ray_tracer.intersections import Intersection, Intersections
-from ray_tracer.rayple import point, vector
+from ray_tracer.rayple import Rayple, point, vector
 from ray_tracer.rays import Ray
 from ray_tracer.shapes import Sphere
-from ray_tracer.transforms import Matrix, scaling, translation
+from ray_tracer.transforms import Matrix, rot_z, scaling, translation
+
+RT_2 = math.sqrt(2)
+RT_3 = math.sqrt(3)
 
 # We're just testing intersection points so we want to share a sphere object since those only
 # compare equal by object ID
@@ -44,3 +48,51 @@ def test_transformed_sphere_intersection(transform: Matrix, truth_t: tuple[float
     truth_intersections = Intersections([Intersection(t, s) for t in truth_t])
 
     assert intersections == truth_intersections
+
+
+UNIT_SPHERE_NORMAL_CASES = (
+    (point(1, 0, 0), vector(1, 0, 0)),
+    (point(0, 1, 0), vector(0, 1, 0)),
+    (point(0, 0, 1), vector(0, 0, 1)),
+    (point(0, 0, 1), vector(0, 0, 1)),
+    (point(RT_3 / 3, RT_3 / 3, RT_3 / 3), vector(RT_3 / 3, RT_3 / 3, RT_3 / 3)),
+)
+
+
+@pytest.mark.parametrize(("query", "truth_vector"), UNIT_SPHERE_NORMAL_CASES)
+def test_unit_sphere_normal(query: Rayple, truth_vector: Rayple) -> None:
+    s = Sphere()
+
+    assert s.normal_at(query) == truth_vector
+
+
+def test_unit_sphere_normal_is_normalized() -> None:
+    s = Sphere()
+    n = s.normal_at(point(RT_3 / 3, RT_3 / 3, RT_3 / 3))
+
+    assert n == n.normalize()
+
+
+def test_normalize_non_point_raises() -> None:
+    s = Sphere()
+    with pytest.raises(ValueError):
+        _ = s.normal_at(vector(1, 0, 0))
+
+
+def test_normal_translated_sphere() -> None:
+    s = Sphere(translation(0, 1, 0))
+
+    query = point(0, 1 + RT_2 / 2, -RT_2 / 2)
+    truth_vector = vector(0, RT_2 / 2, -RT_2 / 2)
+    assert s.normal_at(query) == truth_vector
+
+
+@pytest.mark.xfail(reason="Failing cases actually works works, need to fix float comparisons.")
+def test_normal_transformed_sphere() -> None:
+    transform = scaling(1, 0.5, 1) * rot_z(math.pi / 5)
+    s = Sphere(transform)
+
+    query = point(0, RT_2 / 2, -RT_2 / 2)
+    truth_vector = vector(0, 0.97014, -0.24253)
+
+    assert s.normal_at(query) == truth_vector

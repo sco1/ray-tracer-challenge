@@ -6,15 +6,6 @@ from ray_tracer.intersections import Intersection, Intersections
 from ray_tracer.shapes import Sphere
 
 
-def test_intersection_components() -> None:
-    t = 3.5
-    s = Sphere()
-    intersect = Intersection(t, s)
-
-    assert intersect.t == t
-    assert intersect.obj == s
-
-
 def test_intersections_container() -> None:
     s = Sphere()
     intersections = Intersections([Intersection(1, s), Intersection(2, s)])

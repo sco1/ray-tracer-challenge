@@ -9,6 +9,8 @@ import numpy as np
 
 from ray_tracer import NUMERIC_T
 
+ABS_TOL = 1e-13
+
 
 class RaypleType(IntEnum):  # noqa: D101
     VECTOR = 0
@@ -60,9 +62,9 @@ class Rayple:
         return all(
             (
                 self.w == other.w,
-                math.isclose(self.x, other.x),
-                math.isclose(self.y, other.y),
-                math.isclose(self.z, other.z),
+                math.isclose(self.x, other.x, abs_tol=ABS_TOL),
+                math.isclose(self.y, other.y, abs_tol=ABS_TOL),
+                math.isclose(self.z, other.z, abs_tol=ABS_TOL),
             )
         )
 
@@ -180,6 +182,16 @@ class Rayple:
             z=self.z / abs(self),
             w=self.w,
         )
+
+    def reflect(self, normal: Rayple) -> Rayple:
+        """Calculate the reflected vector."""
+        if self.w != RaypleType.VECTOR:
+            raise ValueError("Cannot reflect a non-vector.")
+
+        if normal.w != RaypleType.VECTOR:
+            raise ValueError("Normal must be a vector.")
+
+        return self - (normal * 2 * dot(self, normal))
 
     def as_array(self) -> np.ndarray:
         """Provide the `Rayple` as a `1x4` array."""

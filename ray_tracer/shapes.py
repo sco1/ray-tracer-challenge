@@ -2,7 +2,8 @@ import math
 from dataclasses import dataclass, field
 
 from ray_tracer.intersections import Intersection, Intersections
-from ray_tracer.rayple import dot, point
+from ray_tracer.materials import Material
+from ray_tracer.rayple import Rayple, RaypleType, dot, point, vector
 from ray_tracer.rays import Ray
 from ray_tracer.transforms import Matrix
 
@@ -23,6 +24,7 @@ class Sphere(ShapeBase):
     """
 
     transform: Matrix = field(default_factory=Matrix.identity)
+    material: Material = Material()
 
     def intersect(self, ray: Ray) -> Intersections:
         """
@@ -53,3 +55,24 @@ class Sphere(ShapeBase):
             ]
 
         return Intersections(intersections)
+
+    def normal_at(self, query: Rayple) -> Rayple:
+        """Calculate the normal vector from the `Sphere` at the provided surface point."""
+        if query.w != RaypleType.POINT:
+            raise ValueError("Query location must be a point.")
+
+        # To account for transformations, we have to shift the query point from world space to the
+        # object space, otherwise our initial normal is not going to be accurate
+        object_point = self.transform.inv() * query
+        object_normal = object_point - point(0, 0, 0)
+
+        # Once we've shifted to object space to get the object normal, we need to shift this back to
+        # the world space by transforming it with the inverse transpose of the sphere's
+        # transformation matrix
+        # Technically, we should be finding the 3x3 submatrix of the transform in order to prevent
+        # any translation from messing with the rayple type; to get around this, we can just make a
+        # new vector from the components
+        world_normal = self.transform.inv().transpose() * object_normal
+        world_normal = vector(*world_normal)
+
+        return world_normal.normalize()

@@ -44,6 +44,10 @@ class Matrix:
         """Return an inverted `Matrix` instance."""
         return Matrix(np.linalg.inv(self.matrix))
 
+    def transpose(self) -> Matrix:
+        """Return a transposed `Matrix` instance."""
+        return Matrix(self.matrix.T)
+
     @classmethod
     def identity(cls) -> Matrix:
         """Initialize an identity matrix."""

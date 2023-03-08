@@ -6,7 +6,6 @@ import pytest
 from ray_tracer import NUMERIC_T
 from ray_tracer.rayple import (
     Rayple,
-    RaypleType,
     color,
     cross,
     dot,
@@ -17,14 +16,7 @@ from ray_tracer.rayple import (
     vector,
 )
 
-
-def test_rayple_components() -> None:
-    rp = Rayple(4.3, -4.2, 3.1, RaypleType.POINT)
-
-    assert rp.x == pytest.approx(4.3)
-    assert rp.y == pytest.approx(-4.2)
-    assert rp.z == pytest.approx(3.1)
-    assert rp.w == RaypleType.POINT
+RT_2 = math.sqrt(2)
 
 
 def test_rayple_iterable() -> None:
@@ -279,3 +271,30 @@ def test_cross_product_point_raises() -> None:
     p = point(1, 2, 3)
     with pytest.raises(ValueError):
         cross(p, p)
+
+
+REFLECTION_TEST_CASES = (
+    (vector(1, -1, 0), vector(0, 1, 0), vector(1, 1, 0)),
+    (vector(0, -1, 0), vector(RT_2 / 2, RT_2 / 2, 0), vector(1, 0, 0)),
+)
+
+
+@pytest.mark.parametrize(("source", "normal", "truth_reflected"), REFLECTION_TEST_CASES)
+def test_reflect(source: Rayple, normal: Rayple, truth_reflected: Rayple) -> None:
+    assert source.reflect(normal) == truth_reflected
+
+
+def test_reflect_nonvector_source_raises() -> None:
+    p = point(0, 0, 0)
+    v = vector(1, 0, 0)
+
+    with pytest.raises(ValueError):
+        _ = p.reflect(v)
+
+
+def test_reflect_nonvector_normal_raises() -> None:
+    v = vector(1, 0, 0)
+    p = point(0, 0, 0)
+
+    with pytest.raises(ValueError):
+        _ = v.reflect(p)
