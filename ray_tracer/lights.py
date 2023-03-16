@@ -16,7 +16,7 @@ def lighting(
     material: Material,
     light: PointLight,
     surf_pos: Rayple,
-    eye_vec: Rayple,
+    eye_v: Rayple,
     normal: Rayple,
 ) -> Rayple:
     """
@@ -35,7 +35,7 @@ def lighting(
     """
     if surf_pos.w != RaypleType.POINT:
         raise ValueError("Surface position must be a point.")
-    if eye_vec.w != RaypleType.VECTOR:
+    if eye_v.w != RaypleType.VECTOR:
         raise ValueError("Eye vector must be a vector.")
     if normal.w != RaypleType.VECTOR:
         raise ValueError("Normal vector must be a vector.")
@@ -55,7 +55,7 @@ def lighting(
 
         # For the specular contribution, determine the angle between the reflection and eye vectors
         reflect_vec = -light_vec.reflect(normal)
-        reflect_dot_eye = dot(reflect_vec, eye_vec)
+        reflect_dot_eye = dot(reflect_vec, eye_v)
         if reflect_dot_eye <= 0:
             # Light is reflecting away from the eye
             specular = BLACK

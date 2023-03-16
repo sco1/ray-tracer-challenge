@@ -25,9 +25,9 @@ ILLUMINATION_TEST_CASES = (
 )
 
 
-@pytest.mark.parametrize(("eye_vec", "light", "truth_lit"), ILLUMINATION_TEST_CASES)
-def test_lighting(eye_vec: Rayple, light: PointLight, truth_lit: Rayple) -> None:
-    lit = LIGHTING_P(light=light, eye_vec=eye_vec)
+@pytest.mark.parametrize(("eye_v", "light", "truth_lit"), ILLUMINATION_TEST_CASES)
+def test_lighting(eye_v: Rayple, light: PointLight, truth_lit: Rayple) -> None:
+    lit = LIGHTING_P(light=light, eye_v=eye_v)
 
     assert lit.w == RaypleType.COLOR
     assert lit == truth_lit
@@ -39,7 +39,7 @@ def test_lighting_nonpoint_surface_raises() -> None:
             material=BASE_MATERIAL,
             light=LIGHT_P(point(0, 0, -10)),
             surf_pos=vector(0, 0, 1),  # Should be a point
-            eye_vec=vector(0, 0, -1),
+            eye_v=vector(0, 0, -1),
             normal=BASE_NORM,
         )
 
@@ -50,7 +50,7 @@ def test_lighting_nonvector_eye_raises() -> None:
             material=BASE_MATERIAL,
             light=LIGHT_P(point(0, 0, -10)),
             surf_pos=BASE_POSITION,
-            eye_vec=point(0, 0, 1),  # Should be a vector
+            eye_v=point(0, 0, 1),  # Should be a vector
             normal=BASE_NORM,
         )
 
@@ -61,6 +61,6 @@ def test_lighting_nonvector_normal_raises() -> None:
             material=BASE_MATERIAL,
             light=LIGHT_P(point(0, 0, -10)),
             surf_pos=BASE_POSITION,
-            eye_vec=vector(0, 0, -1),
+            eye_v=vector(0, 0, -1),
             normal=point(0, 0, 1),  # Should be a vector
         )

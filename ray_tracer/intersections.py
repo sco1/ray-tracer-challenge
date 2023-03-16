@@ -6,6 +6,8 @@ from dataclasses import dataclass
 from functools import cached_property
 
 from ray_tracer import NUMERIC_T
+from ray_tracer.rayple import Rayple, dot
+from ray_tracer.rays import Ray
 
 if t.TYPE_CHECKING:
     from ray_tracer.shapes import ShapeBase
@@ -21,13 +23,15 @@ class Intersections(UserList):
     """
     Helper container for shape intersections.
 
-    Intersections, if present, will always be sorted by `Intersection.t`
+    Intersections, if present, will be sorted by `Intersection.t` on instantiation.
     """
 
     def __init__(self, in_data: t.Iterable[Intersection]) -> None:
         self.data: list[Intersection] = list(in_data)
-        if self.data:
-            self.data.sort(key=lambda x: x.t)
+        self.sort()
+
+    def sort(self, reverse: bool = False) -> None:  # type: ignore[override]  # noqa: D102
+        self.data.sort(key=lambda x: x.t, reverse=reverse)
 
     @cached_property
     def hit(self) -> Intersection | None:
@@ -37,3 +41,31 @@ class Intersections(UserList):
                 return intersect
         else:
             return None
+
+
+@dataclass(frozen=True, slots=True)
+class Comps:  # noqa: D101
+    t: NUMERIC_T
+    obj: ShapeBase
+    point: Rayple
+    eye_v: Rayple
+    normal: Rayple
+    inside: bool
+
+
+def prepare_computations(inter: Intersection, ray: Ray) -> Comps:
+    """Precompute helper information relating to the provided `Ray` intersection."""
+    pt = ray.position(inter.t)
+
+    # Check if the hit occurs on the inside of the shape; if it does, the normal needs to be
+    # inverted so the surface is illuminated properly
+    # We can roughly check this by seeing if the normal points away from the eye vector
+    eye_v = -ray.direction
+    normal = inter.obj.normal_at(pt)
+    if dot(normal, eye_v) < 0:
+        inside = True
+        normal = -normal
+    else:
+        inside = False
+
+    return Comps(t=inter.t, obj=inter.obj, point=pt, eye_v=eye_v, normal=normal, inside=inside)
