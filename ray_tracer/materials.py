@@ -13,7 +13,7 @@ class Material:
     `specular` values are typically between `0` and `1`, and `shininess` values are typically
     between `10` and `200`.
 
-    Attribute magnitudes are not enforced beyond ensuring they are positive and non-zero.
+    Attribute magnitudes are not enforced beyond ensuring they are positive.
     """
 
     color: Rayple = color(1, 1, 1)
@@ -23,5 +23,5 @@ class Material:
     shininess: NUMERIC_T = 200
 
     def __post_init__(self) -> None:
-        if any((val <= 0 for val in (self.ambient, self.diffuse, self.specular, self.shininess))):
-            raise ValueError("Reflection attributes must be non-zero.")
+        if any((val < 0 for val in (self.ambient, self.diffuse, self.specular, self.shininess))):
+            raise ValueError("Reflection attributes must be non-negative.")
