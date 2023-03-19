@@ -1,9 +1,20 @@
 import math
 
+import numpy as np
 import pytest
 
 from ray_tracer.rayple import Rayple, point, vector
-from ray_tracer.transforms import rot, rot_x, rot_y, rot_z, scaling, shearing, translation
+from ray_tracer.transforms import (
+    Matrix,
+    rot,
+    rot_x,
+    rot_y,
+    rot_z,
+    scaling,
+    shearing,
+    translation,
+    view_transform,
+)
 
 R2O2 = math.sqrt(2) / 2
 H_QUART = math.pi / 4
@@ -151,3 +162,24 @@ def test_transform_chaining() -> None:
     # Chained transformations
     chained = C * B * A
     assert chained * p == truth_p
+
+
+ARBITRARY_TRANSFORM_TRUTH = np.array(
+    [
+        [-0.50709, 0.50709, 0.67612, -2.36643],
+        [0.76772, 0.60609, 0.12122, -2.82843],
+        [-0.35857, 0.59761, -0.71714, 0],
+        [0, 0, 0, 1],
+    ]
+)
+VIEW_TRANSFORM_CASES = (
+    (point(0, 0, 0), point(0, 0, -1), vector(0, 1, 0), Matrix.identity()),  # Default orientation
+    (point(0, 0, 0), point(0, 0, 1), vector(0, 1, 0), scaling(-1, 1, -1)),  # Turn around on z-axis
+    (point(0, 0, 8), point(0, 0, 0), vector(0, 1, 0), translation(0, 0, -8)),  # Shift along z-axis
+    (point(1, 3, 2), point(4, -2, 8), vector(1, 1, 0), Matrix(ARBITRARY_TRANSFORM_TRUTH)),
+)
+
+
+@pytest.mark.parametrize(("from_p", "to_p", "up_v", "truth_trans"), VIEW_TRANSFORM_CASES)
+def test_view_transform(from_p: Rayple, to_p: Rayple, up_v: Rayple, truth_trans: Matrix) -> None:
+    assert view_transform(from_p, to_p, up_v) == truth_trans

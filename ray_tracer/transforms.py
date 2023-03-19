@@ -7,7 +7,7 @@ from math import cos, sin
 import numpy as np
 
 from ray_tracer import NUMERIC_T
-from ray_tracer.rayple import Rayple
+from ray_tracer.rayple import Rayple, cross
 
 ZERO_TOL = 1e-16
 
@@ -39,6 +39,12 @@ class Matrix:
             return Matrix(chained)
         else:
             return NotImplemented
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Matrix):  # pragma: no cover
+            return NotImplemented
+
+        return np.allclose(self.matrix, other.matrix, rtol=1e-4)
 
     def inv(self) -> Matrix:
         """Return an inverted `Matrix` instance."""
@@ -139,3 +145,18 @@ def shearing(
     )
 
     return Matrix(matrix)
+
+
+def view_transform(from_p: Rayple, to_p: Rayple, up_v: Rayple) -> Matrix:
+    """Create a transformation matrix from a given point to the provided point & orientation."""
+    forward = (to_p - from_p).normalize()
+    up_norm = up_v.normalize()
+    left = cross(forward, up_norm)
+    true_up = cross(left, forward)
+
+    orientation = np.identity(4)
+    orientation[0, 0:3] = [*left]
+    orientation[1, 0:3] = [*true_up]
+    orientation[2, 0:3] = [*-forward]
+
+    return Matrix(orientation) * translation(*-from_p)
