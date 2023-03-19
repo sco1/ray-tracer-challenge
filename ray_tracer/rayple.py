@@ -7,9 +7,7 @@ from enum import IntEnum
 
 import numpy as np
 
-from ray_tracer import NUMERIC_T
-
-ABS_TOL = 1e-5
+from ray_tracer import EPSILON, NUMERIC_T
 
 
 class RaypleType(IntEnum):  # noqa: D101
@@ -62,9 +60,9 @@ class Rayple:
         return all(
             (
                 self.w == other.w,
-                math.isclose(self.x, other.x, abs_tol=ABS_TOL),
-                math.isclose(self.y, other.y, abs_tol=ABS_TOL),
-                math.isclose(self.z, other.z, abs_tol=ABS_TOL),
+                math.isclose(self.x, other.x, abs_tol=EPSILON),
+                math.isclose(self.y, other.y, abs_tol=EPSILON),
+                math.isclose(self.z, other.z, abs_tol=EPSILON),
             )
         )
 

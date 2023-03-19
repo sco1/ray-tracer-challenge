@@ -64,3 +64,11 @@ def test_lighting_nonvector_normal_raises() -> None:
             eye_v=vector(0, 0, -1),
             normal=point(0, 0, 1),  # Should be a vector
         )
+
+
+def test_lighting_in_shadow() -> None:
+    eye_v = vector(0, 0, -1)
+    light = LIGHT_P(point(0, 0, -10))
+
+    lit = LIGHTING_P(light=light, eye_v=eye_v, in_shadow=True)
+    assert lit == color(0.1, 0.1, 0.1)

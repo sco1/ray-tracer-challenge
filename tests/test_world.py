@@ -6,7 +6,7 @@ from ray_tracer.materials import Material
 from ray_tracer.rayple import Rayple, color, point, vector
 from ray_tracer.rays import Ray
 from ray_tracer.shapes import Sphere
-from ray_tracer.transforms import scaling
+from ray_tracer.transforms import scaling, translation
 from ray_tracer.world import DEFAULT_LIGHT, World
 
 
@@ -60,3 +60,30 @@ def test_color_at_intersection_behind_ray() -> None:
 
     r = Ray(point(0, 0, 0.75), vector(0, 0, -1))
     assert w.color_at(r) == w.objects[1].material.color
+
+
+SHADOWED_CASES = (
+    (point(0, 10, 0), False),
+    (point(10, -10, 10), True),
+    (point(-20, 20, -20), False),
+    (point(-2, 2, -2), False),
+)
+
+
+@pytest.mark.parametrize(("pt", "truth_val"), SHADOWED_CASES)
+def test_is_shadowed(pt: Rayple, truth_val: bool) -> None:
+    w = World.default_world()
+    assert w.is_shadowed(pt) == truth_val
+
+
+def test_shade_at_shaded_point() -> None:
+    s1 = Sphere()
+    s2 = Sphere(transform=translation(0, 0, 10))
+    w = World(PointLight(point(0, 0, -10), color(1, 1, 1)), objects=[s1, s2])
+
+    r = Ray(point(0, 0, 5), vector(0, 0, 1))
+    i = Intersection(4, s2)
+    comps = prepare_computations(i, r)
+
+    c = w._shade_hit(comps)
+    assert c == color(0.1, 0.1, 0.1)

@@ -18,6 +18,7 @@ def lighting(
     surf_pos: Rayple,
     eye_v: Rayple,
     normal: Rayple,
+    in_shadow: bool = False,
 ) -> Rayple:
     """
     Calculate the shading from the given light source at the given point on an object.
@@ -32,6 +33,8 @@ def lighting(
         lighting (a bright spot on a curved surface); depends on the angle between the reflection
         vector and the eye vector. This is controlled by the object's shininess: the higher the
         shininess, the smaller and tighter the specular highlight.
+
+    If `in_shadow` is `True`, then diffuse and specular components are ignored.
     """
     if surf_pos.w != RaypleType.POINT:
         raise ValueError("Surface position must be a point.")
@@ -42,6 +45,9 @@ def lighting(
 
     effective_color = material.color * light.intensity
     ambient = effective_color * material.ambient
+
+    if in_shadow:
+        return ambient
 
     light_vec = (light.position - surf_pos).normalize()
     light_dot_normal = dot(light_vec, normal)

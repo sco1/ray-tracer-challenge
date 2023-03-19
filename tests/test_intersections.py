@@ -2,10 +2,12 @@ from functools import partial
 
 import pytest
 
+from ray_tracer import EPSILON
 from ray_tracer.intersections import Comps, Intersection, Intersections, prepare_computations
 from ray_tracer.rayple import point, vector
 from ray_tracer.rays import Ray
 from ray_tracer.shapes import Sphere
+from ray_tracer.transforms import translation
 
 
 def test_intersections_container() -> None:
@@ -72,3 +74,13 @@ def test_prepare_computations(r: Ray, inter: Intersection, truth_comp: Comps) ->
     comps = prepare_computations(inter, r)
 
     assert comps == truth_comp
+
+
+def test_prepare_computations_over_point() -> None:
+    r = Ray(point(0, 0, -5), vector(0, 0, 1))
+    shape = Sphere(transform=translation(0, 0, 1))
+    i = Intersection(5, shape)
+
+    comps = prepare_computations(i, r)
+    assert comps.over_point.z < -EPSILON / 2  # Ensure correct direction
+    assert comps.point.z > comps.over_point.z

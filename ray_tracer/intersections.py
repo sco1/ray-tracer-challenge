@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import typing as t
 from collections import UserList
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import cached_property
 
-from ray_tracer import NUMERIC_T
+from ray_tracer import EPSILON, NUMERIC_T
 from ray_tracer.rayple import Rayple, dot
 from ray_tracer.rays import Ray
 
@@ -43,7 +43,7 @@ class Intersections(UserList):
             return None
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(slots=True)
 class Comps:  # noqa: D101
     t: NUMERIC_T
     obj: ShapeBase
@@ -51,6 +51,13 @@ class Comps:  # noqa: D101
     eye_v: Rayple
     normal: Rayple
     inside: bool
+    over_point: Rayple = field(init=False)
+
+    def __post_init__(self) -> None:
+        # Create a point shifted slightly in the direction of the normal to help prevent
+        # self-shadowing due to floating point issues; if a point is on the surface it may be
+        # accidentally considered inside
+        self.over_point = self.point + self.normal * EPSILON
 
 
 def prepare_computations(inter: Intersection, ray: Ray) -> Comps:

@@ -32,7 +32,7 @@ def first_camera() -> None:
         Material(color(0.5, 1, 0.1), diffuse=0.7, specular=0.3),
     )
     left = Sphere(
-        translation(-1.5, 0.44, -0.75) * scaling(0.33, 0.33, 0.33),
+        translation(-1.5, 0.33, -0.75) * scaling(0.33, 0.33, 0.33),
         Material(color(1, 0.8, 0.1), diffuse=0.7, specular=0.3),
     )
 

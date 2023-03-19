@@ -35,12 +35,17 @@ class World:  # noqa: D101
 
     def _shade_hit(self, comps: Comps) -> Rayple:
         """Calculate the color at the provided pre-computed intersection point in the world."""
+        # Use comps.over_point to account for floating point issues around object surfaces; this
+        # value bumps the query point slightly towards the normal so it's not accidentally
+        # considered inside
+        shadowed = self.is_shadowed(comps.over_point)
         return lighting(
             material=comps.obj.material,
             light=self.light,
             surf_pos=comps.point,
             eye_v=comps.eye_v,
             normal=comps.normal,
+            in_shadow=shadowed,
         )
 
     def color_at(self, r: Ray) -> Rayple:
@@ -55,6 +60,21 @@ class World:  # noqa: D101
 
         comps = prepare_computations(hit, r)
         return self._shade_hit(comps)
+
+    def is_shadowed(self, pt: Rayple) -> bool:
+        """Determine if the query point is shadowed by a world object."""
+        # Cast a ray from the point towards the light source & see if it hits anything along the way
+        pt_v = self.light.position - pt
+        pt_dist = abs(pt_v)
+        pt_dir = pt_v.normalize()
+        r = Ray(pt, pt_dir)
+
+        intersections = self.intersect_world(r)
+        h = intersections.hit
+        if h and h.t < pt_dist:  # Make sure hit isn't past the light source
+            return True
+        else:
+            return False
 
     @classmethod
     def default_world(cls) -> World:  # pragma: no cover
