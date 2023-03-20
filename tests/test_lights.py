@@ -6,7 +6,7 @@ import pytest
 from ray_tracer.colors import BLACK, WHITE
 from ray_tracer.lights import PointLight, lighting
 from ray_tracer.materials import Material
-from ray_tracer.patterns import Striped
+from ray_tracer.patterns import Stripe
 from ray_tracer.rayple import Rayple, RaypleType, color, point, vector
 from ray_tracer.shapes import Sphere
 
@@ -84,7 +84,7 @@ def test_lighting_in_shadow() -> None:
 
 
 def test_lighting_with_pattern() -> None:
-    m = Material(pattern=Striped(), ambient=1, diffuse=0, specular=0)
+    m = Material(pattern=Stripe(), ambient=1, diffuse=0, specular=0)
     obj = Sphere()
     eye_v = vector(0, 0, -1)
     normal = vector(0, 0, -1)

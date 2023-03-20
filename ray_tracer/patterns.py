@@ -38,11 +38,45 @@ class Pattern:
 
 
 @dataclass(frozen=True, slots=True)
-class Striped(Pattern):
-    """Alternating color pattern along the x-axis (e.g. `0->1` is `a`, `1->2` is `b`, etc.)."""
+class Stripe(Pattern):
+    """Alternating color pattern along the x-axis."""
 
     def at_point(self, pt: Rayple) -> Rayple:  # noqa: D102
         if math.floor(pt.x) % 2 == 0:
+            return self.a
+        else:
+            return self.b
+
+
+@dataclass(frozen=True, slots=True)
+class Gradient(Pattern):
+    """Linear gradient along the x-axis."""
+
+    def at_point(self, pt: Rayple) -> Rayple:  # noqa: D102
+        # Linear blending function along x
+        distance = self.b - self.a
+        fractional = pt.x - math.floor(pt.x)
+
+        return self.a + distance * fractional
+
+
+@dataclass(frozen=True, slots=True)
+class Ring(Pattern):
+    """Alternating color pattern in concentric rings around the y-axis."""
+
+    def at_point(self, pt: Rayple) -> Rayple:  # noqa: D102
+        if math.floor(math.sqrt(pt.x**2 + pt.z**2)) % 2 == 0:
+            return self.a
+        else:
+            return self.b
+
+
+@dataclass(frozen=True, slots=True)
+class Checker(Pattern):
+    """Repeating pattern of squares in 3 dimensions."""
+
+    def at_point(self, pt: Rayple) -> Rayple:  # noqa: D102
+        if sum(math.floor(n) for n in pt) % 2 == 0:
             return self.a
         else:
             return self.b
