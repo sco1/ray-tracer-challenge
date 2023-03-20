@@ -1,7 +1,9 @@
 from dataclasses import dataclass
 
 from ray_tracer import NUMERIC_T
-from ray_tracer.rayple import Rayple, color
+from ray_tracer.colors import WHITE
+from ray_tracer.patterns import Pattern
+from ray_tracer.rayple import Rayple
 
 
 @dataclass(frozen=True, slots=True)
@@ -16,7 +18,8 @@ class Material:
     Attribute magnitudes are not enforced beyond ensuring they are positive.
     """
 
-    color: Rayple = color(1, 1, 1)
+    color: Rayple = WHITE
+    pattern: Pattern | None = None
     ambient: NUMERIC_T = 0.1
     diffuse: NUMERIC_T = 0.9
     specular: NUMERIC_T = 0.9

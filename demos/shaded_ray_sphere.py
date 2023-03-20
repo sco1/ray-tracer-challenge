@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from ray_tracer.canvas import Canvas
+from ray_tracer.colors import WHITE
 from ray_tracer.lights import PointLight, lighting
 from ray_tracer.materials import Material
 from ray_tracer.rayple import color, point
@@ -21,7 +22,7 @@ def shaded_ray_sphere() -> None:
     s = Sphere(material=Material(color=color(1, 0.2, 1)))
 
     light_position = point(-10, 10, -10)
-    light_color = color(1, 1, 1)
+    light_color = WHITE
     light = PointLight(light_position, light_color)
 
     for y in range(canvas_size + 1):
@@ -40,7 +41,14 @@ def shaded_ray_sphere() -> None:
                     hit = intersections.hit
                     surface_point = r.position(hit.t)
                     normal = hit.obj.normal_at(surface_point)
-                    lit_color = lighting(hit.obj.material, light, surface_point, eye, normal)
+                    lit_color = lighting(
+                        material=hit.obj.material,
+                        obj=hit.obj,
+                        light=light,
+                        surf_pos=surface_point,
+                        eye_v=eye,
+                        normal=normal,
+                    )
 
                 c.write_pixel(x, y, lit_color)
 

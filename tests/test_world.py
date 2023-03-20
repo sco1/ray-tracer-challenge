@@ -1,5 +1,6 @@
 import pytest
 
+from ray_tracer.colors import WHITE
 from ray_tracer.intersections import Intersection, prepare_computations
 from ray_tracer.lights import PointLight
 from ray_tracer.materials import Material
@@ -31,7 +32,7 @@ def test_shade_intersection() -> None:
 
 def test_shade_inside_intersection() -> None:
     w = World.default_world()
-    w.light = PointLight(point(0, 0.25, 0), color(1, 1, 1))
+    w.light = PointLight(point(0, 0.25, 0), WHITE)
 
     r = Ray(point(0, 0, 0), vector(0, 0, 1))
     i = Intersection(0.5, w.objects[1])
@@ -79,7 +80,7 @@ def test_is_shadowed(pt: Rayple, truth_val: bool) -> None:
 def test_shade_at_shaded_point() -> None:
     s1 = Sphere()
     s2 = Sphere(transform=translation(0, 0, 10))
-    w = World(PointLight(point(0, 0, -10), color(1, 1, 1)), objects=[s1, s2])
+    w = World(PointLight(point(0, 0, -10), WHITE), objects=[s1, s2])
 
     r = Ray(point(0, 0, 5), vector(0, 0, 1))
     i = Intersection(4, s2)

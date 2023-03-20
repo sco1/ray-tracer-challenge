@@ -2,11 +2,12 @@ from math import pi
 from pathlib import Path
 
 from ray_tracer.camera import Camera
+from ray_tracer.colors import WHITE
 from ray_tracer.lights import PointLight
 from ray_tracer.materials import Material
 from ray_tracer.rayple import color, point, vector
-from ray_tracer.shapes import Sphere, Plane
-from ray_tracer.transforms import rot, scaling, translation, view_transform
+from ray_tracer.shapes import Plane, Sphere
+from ray_tracer.transforms import scaling, translation, view_transform
 from ray_tracer.world import World
 
 
@@ -29,7 +30,7 @@ def balls_on_the_floor() -> None:
 
     # Now lighting & the camera
     world = World(
-        PointLight(point(-10, 10, -10), color(1, 1, 1)),
+        PointLight(point(-10, 10, -10), WHITE),
         [floor, middle, right, left],
     )
     camera = Camera(

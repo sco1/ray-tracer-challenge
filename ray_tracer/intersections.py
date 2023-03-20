@@ -10,13 +10,13 @@ from ray_tracer.rayple import Rayple, dot
 from ray_tracer.rays import Ray
 
 if t.TYPE_CHECKING:
-    from ray_tracer.shapes import ShapeBase
+    from ray_tracer.shapes import Shape
 
 
 @dataclass(frozen=True, slots=True)
 class Intersection:  # noqa: D101
     t: NUMERIC_T
-    obj: ShapeBase
+    obj: Shape
 
 
 class Intersections(UserList):
@@ -46,7 +46,7 @@ class Intersections(UserList):
 @dataclass(slots=True)
 class Comps:  # noqa: D101
     t: NUMERIC_T
-    obj: ShapeBase
+    obj: Shape
     point: Rayple
     eye_v: Rayple
     normal: Rayple

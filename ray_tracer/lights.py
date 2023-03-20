@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 
+from ray_tracer.colors import BLACK
 from ray_tracer.materials import Material
-from ray_tracer.rayple import Rayple, RaypleType, color, dot
-
-BLACK = color(0, 0, 0)
+from ray_tracer.rayple import Rayple, RaypleType, dot
+from ray_tracer.shapes import Shape
 
 
 @dataclass(frozen=True, slots=True)
@@ -14,6 +16,7 @@ class PointLight:  # noqa: D101
 
 def lighting(
     material: Material,
+    obj: Shape,
     light: PointLight,
     surf_pos: Rayple,
     eye_v: Rayple,
@@ -43,7 +46,12 @@ def lighting(
     if normal.w != RaypleType.VECTOR:
         raise ValueError("Normal vector must be a vector.")
 
-    effective_color = material.color * light.intensity
+    if material.pattern:
+        surf_color = material.pattern.at_object(obj, surf_pos)
+    else:
+        surf_color = material.color
+
+    effective_color = surf_color * light.intensity
     ambient = effective_color * material.ambient
 
     if in_shadow:

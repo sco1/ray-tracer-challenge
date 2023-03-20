@@ -2,6 +2,7 @@ from math import pi
 from pathlib import Path
 
 from ray_tracer.camera import Camera
+from ray_tracer.colors import WHITE
 from ray_tracer.lights import PointLight
 from ray_tracer.materials import Material
 from ray_tracer.rayple import color, point, vector
@@ -38,7 +39,7 @@ def first_camera() -> None:
 
     # Now lighting & the camera
     world = World(
-        PointLight(point(-10, 10, -10), color(1, 1, 1)),
+        PointLight(point(-10, 10, -10), WHITE),
         [floor, left_wall, right_wall, middle, right, left],
     )
     camera = Camera(

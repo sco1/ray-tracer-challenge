@@ -10,11 +10,11 @@ from ray_tracer.transforms import Matrix
 
 
 @dataclass(frozen=True, slots=True, eq=False)
-class ShapeBase:
+class Shape:
     """
     Base class for creating shape objects; this is not intended to be instantiated.
 
-    Child instances must define `_local_intersect` and `_local_normal_at` to calculate their
+    Child classes must define `_local_intersect` and `_local_normal_at` to calculate their
     respective local values, which are then transformed into world coordinates by the base methods.
 
     NOTE: Shapes are compared by object ID only, so no 2 instances will compare `True`.
@@ -67,7 +67,7 @@ class ShapeBase:
 
 
 @dataclass(frozen=True, slots=True, eq=False)
-class Sphere(ShapeBase):
+class Sphere(Shape):
     """
     Unit sphere representation.
 
@@ -102,7 +102,7 @@ class Sphere(ShapeBase):
 
 
 @dataclass(frozen=True, slots=True, eq=False)
-class Plane(ShapeBase):
+class Plane(Shape):
     """
     Plane representation.
 

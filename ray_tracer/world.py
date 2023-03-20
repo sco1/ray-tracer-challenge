@@ -2,23 +2,22 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from ray_tracer.colors import BLACK, WHITE
 from ray_tracer.intersections import Comps, Intersections, prepare_computations
 from ray_tracer.lights import PointLight, lighting
 from ray_tracer.materials import Material
 from ray_tracer.rayple import Rayple, color, point
 from ray_tracer.rays import Ray
-from ray_tracer.shapes import ShapeBase, Sphere
+from ray_tracer.shapes import Shape, Sphere
 from ray_tracer.transforms import scaling
 
-BLACK = color(0, 0, 0)
-
-DEFAULT_LIGHT = PointLight(point(-10, 10, -10), color(1, 1, 1))
+DEFAULT_LIGHT = PointLight(point(-10, 10, -10), WHITE)
 
 
 @dataclass(slots=True)
 class World:  # noqa: D101
     light: PointLight
-    objects: list[ShapeBase]
+    objects: list[Shape]
 
     def intersect_world(self, ray: Ray) -> Intersections:
         """
@@ -41,6 +40,7 @@ class World:  # noqa: D101
         shadowed = self.is_shadowed(comps.over_point)
         return lighting(
             material=comps.obj.material,
+            obj=comps.obj,
             light=self.light,
             surf_pos=comps.point,
             eye_v=comps.eye_v,
