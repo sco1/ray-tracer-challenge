@@ -1,6 +1,7 @@
 import math
 from dataclasses import dataclass, field
 
+from ray_tracer import EPSILON
 from ray_tracer.intersections import Intersection, Intersections
 from ray_tracer.materials import Material
 from ray_tracer.rayple import Rayple, RaypleType, dot, point, vector
@@ -15,6 +16,8 @@ class ShapeBase:
 
     Child instances must define `_local_intersect` and `_local_normal_at` to calculate their
     respective local values, which are then transformed into world coordinates by the base methods.
+
+    NOTE: Shapes are compared by object ID only, so no 2 instances will compare `True`.
     """
 
     transform: Matrix = field(default_factory=Matrix.identity)
@@ -68,10 +71,12 @@ class Sphere(ShapeBase):
     """
     Unit sphere representation.
 
-    NOTE: Spheres are assumed to be unit spheres, i.e. centered at `(0, 0, 0)` with a radius of `1`.
-    Sphere position, size, and rotation can be adjusted by changing the value of `transform`.
+    Spheres are assumed to be unit spheres, i.e. centered at `(0, 0, 0)` with a radius of `1`.
+    Sphere position, size, and rotation can be adjusted by passing in a non-identity `transform`
+    matrix.
 
-    NOTE: Spheres are compared by object ID only, so no 2 instances will compare `True`
+    NOTE: For simplicity, the ntersection between a sphere and a tangent ray will result in two
+    identical intersections.
     """
 
     def _local_intersect(self, transformed_ray: Ray) -> Intersections:
@@ -94,3 +99,28 @@ class Sphere(ShapeBase):
 
     def _local_normal_at(self, local_point: Rayple) -> Rayple:
         return local_point - point(0, 0, 0)
+
+
+@dataclass(frozen=True, slots=True, eq=False)
+class Plane(ShapeBase):
+    """
+    Plane representation.
+
+    Planes are assumed to be infinite and oriented in the XZ plane. Plane position and rotation can
+    be adjusted by passing in a non-identity `transform` matrix.
+
+    NOTE: Rays that are coplanar with a given plane are treated as missing the plane rather than
+    trying to consider an infinite number of intersections.
+    """
+
+    def _local_intersect(self, transformed_ray: Ray) -> Intersections:
+        # If the slope is zero then we're parallel/coplanar
+        if abs(transformed_ray.direction.y) < EPSILON:
+            return Intersections([])
+
+        t = -transformed_ray.origin.y / transformed_ray.direction.y
+        return Intersections([Intersection(t, self)])
+
+    def _local_normal_at(self, local_point: Rayple) -> Rayple:
+        # The normal of a plane is constant everywhere
+        return vector(0, 1, 0)
