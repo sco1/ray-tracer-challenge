@@ -11,9 +11,9 @@ class Material:
     """
     Represent material attributes from the Phong reflection model.
 
-    Reflecton attributes are assumed to be positive and non-zero; `ambient`, `diffuse`, and
-    `specular` values are typically between `0` and `1`, and `shininess` values are typically
-    between `10` and `200`.
+    Reflecton attributes are assumed to be positive and non-zero; `ambient`, `diffuse`,
+    `reflective`, and `specular` values are typically between `0` and `1`, and `shininess` values
+    are typically between `10` and `200`.
 
     Attribute magnitudes are not enforced beyond ensuring they are positive.
     """
@@ -24,7 +24,19 @@ class Material:
     diffuse: NUMERIC_T = 0.9
     specular: NUMERIC_T = 0.9
     shininess: NUMERIC_T = 200
+    reflective: NUMERIC_T = 0
 
     def __post_init__(self) -> None:
-        if any((val < 0 for val in (self.ambient, self.diffuse, self.specular, self.shininess))):
+        if any(
+            (
+                val < 0
+                for val in (
+                    self.ambient,
+                    self.diffuse,
+                    self.specular,
+                    self.shininess,
+                    self.reflective,
+                )
+            )
+        ):
             raise ValueError("Reflection attributes must be non-negative.")

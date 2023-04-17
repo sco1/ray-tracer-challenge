@@ -1,3 +1,4 @@
+import math
 from functools import partial
 
 import pytest
@@ -6,7 +7,7 @@ from ray_tracer import EPSILON
 from ray_tracer.intersections import Comps, Intersection, Intersections, prepare_computations
 from ray_tracer.rayple import point, vector
 from ray_tracer.rays import Ray
-from ray_tracer.shapes import Sphere
+from ray_tracer.shapes import Plane, Sphere
 from ray_tracer.transforms import translation
 
 
@@ -52,6 +53,7 @@ COMPUTATIONS_CASES = (
             eye_v=vector(0, 0, -1),
             normal=vector(0, 0, -1),
             inside=False,
+            reflect_v=vector(0, 0, -1),
         ),
     ),
     (
@@ -64,6 +66,7 @@ COMPUTATIONS_CASES = (
             eye_v=vector(0, 0, -1),
             normal=vector(0, 0, -1),
             inside=True,
+            reflect_v=vector(0, 0, -1),
         ),
     ),
 )
@@ -84,3 +87,15 @@ def test_prepare_computations_over_point() -> None:
     comps = prepare_computations(i, r)
     assert comps.over_point.z < -EPSILON / 2  # Ensure correct direction
     assert comps.point.z > comps.over_point.z
+
+
+RT_2 = math.sqrt(2)
+
+
+def test_reflection_vector() -> None:
+    shape = Plane()
+    r = Ray(point(0, 1, -1), vector(0, -RT_2 / 2, RT_2 / 2))
+    i = Intersection(RT_2, shape)
+
+    comps = prepare_computations(i, r)
+    assert comps.reflect_v == vector(0, RT_2 / 2, RT_2 / 2)

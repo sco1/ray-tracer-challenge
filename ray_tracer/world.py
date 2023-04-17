@@ -13,6 +13,8 @@ from ray_tracer.transforms import scaling
 
 DEFAULT_LIGHT = PointLight(point(-10, 10, -10), WHITE)
 
+REFLECTION_LIMIT = 5
+
 
 @dataclass(slots=True)
 class World:  # noqa: D101
@@ -32,13 +34,18 @@ class World:  # noqa: D101
         all_intersections.sort()
         return all_intersections
 
-    def _shade_hit(self, comps: Comps) -> Rayple:
-        """Calculate the color at the provided pre-computed intersection point in the world."""
+    def _shade_hit(self, comps: Comps, remaining: int = REFLECTION_LIMIT) -> Rayple:
+        """
+        Calculate the color at the provided pre-computed intersection point in the world.
+
+        The `remaining` arg is included to prevent infinite reflections from blowing up the stack.
+        This parameter is decremented in the `reflected_color` method.
+        """
         # Use comps.over_point to account for floating point issues around object surfaces; this
         # value bumps the query point slightly towards the normal so it's not accidentally
         # considered inside
         shadowed = self.is_shadowed(comps.over_point)
-        return lighting(
+        surface = lighting(
             material=comps.obj.material,
             obj=comps.obj,
             light=self.light,
@@ -47,10 +54,15 @@ class World:  # noqa: D101
             normal=comps.normal,
             in_shadow=shadowed,
         )
+        reflected = self.reflected_color(comps, remaining=remaining)
+        return surface + reflected
 
-    def color_at(self, r: Ray) -> Rayple:
+    def color_at(self, r: Ray, remaining: int = REFLECTION_LIMIT) -> Rayple:
         """
         Calculate the color at the `Ray`'s first intersection point in the world.
+
+        The `remaining` arg is included to prevent infinite reflections from blowing up the stack.
+        This parameter is decremented in the `reflected_color` method.
 
         NOTE: If the `Ray` has no intersection point(s), the returned color will be black.
         """
@@ -59,7 +71,7 @@ class World:  # noqa: D101
             return BLACK
 
         comps = prepare_computations(hit, r)
-        return self._shade_hit(comps)
+        return self._shade_hit(comps, remaining=remaining)
 
     def is_shadowed(self, pt: Rayple) -> bool:
         """Determine if the query point is shadowed by a world object."""
@@ -75,6 +87,26 @@ class World:  # noqa: D101
             return True
         else:
             return False
+
+    def reflected_color(self, comps: Comps, remaining: int = REFLECTION_LIMIT) -> Rayple:
+        """
+        Determine the reflected color for the provided precomputed intersection.
+
+        The `remaining` arg is included to prevent infinite reflections from blowing up the stack by
+        returning Black if the reflection limit has been reached. This parameter is decremented in
+        the `reflected_color` method.
+        """
+        if comps.obj.material.reflective == 0:
+            return BLACK
+
+        if remaining <= 0:
+            return BLACK
+
+        # Use over_point to help prevent rays from originating just below the surface, causing them
+        # to intersect the surface they're supposed to be reflecting from
+        reflect_ray = Ray(comps.over_point, comps.reflect_v)
+        col = self.color_at(reflect_ray, remaining=remaining - 1)
+        return col * comps.obj.material.reflective
 
     @classmethod
     def default_world(cls) -> World:  # pragma: no cover

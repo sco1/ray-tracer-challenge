@@ -51,6 +51,7 @@ class Comps:  # noqa: D101
     eye_v: Rayple
     normal: Rayple
     inside: bool
+    reflect_v: Rayple
     over_point: Rayple = field(init=False)
 
     def __post_init__(self) -> None:
@@ -75,4 +76,14 @@ def prepare_computations(inter: Intersection, ray: Ray) -> Comps:
     else:
         inside = False
 
-    return Comps(t=inter.t, obj=inter.obj, point=pt, eye_v=eye_v, normal=normal, inside=inside)
+    reflect_v = ray.direction.reflect(normal)
+
+    return Comps(
+        t=inter.t,
+        obj=inter.obj,
+        point=pt,
+        eye_v=eye_v,
+        normal=normal,
+        inside=inside,
+        reflect_v=reflect_v,
+    )

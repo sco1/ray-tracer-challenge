@@ -1,12 +1,14 @@
+import math
+
 import pytest
 
-from ray_tracer.colors import WHITE
+from ray_tracer.colors import BLACK, WHITE
 from ray_tracer.intersections import Intersection, prepare_computations
 from ray_tracer.lights import PointLight
 from ray_tracer.materials import Material
 from ray_tracer.rayple import Rayple, color, point, vector
 from ray_tracer.rays import Ray
-from ray_tracer.shapes import Sphere
+from ray_tracer.shapes import Plane, Sphere
 from ray_tracer.transforms import scaling, translation
 from ray_tracer.world import DEFAULT_LIGHT, World
 
@@ -88,3 +90,56 @@ def test_shade_at_shaded_point() -> None:
 
     c = w._shade_hit(comps)
     assert c == color(0.1, 0.1, 0.1)
+
+
+def test_reflect_color_nonreflective_material() -> None:
+    s1 = Sphere(material=Material(color=color(0.8, 1.0, 0.6), ambient=1, diffuse=0.7, specular=0.2))
+    s2 = Sphere(transform=scaling(0.5, 0.5, 0.5))
+    w = World(DEFAULT_LIGHT, [s1, s2])
+
+    r = Ray(point(0, 0, 0), vector(0, 0, 1))
+    i = Intersection(1, s1)
+    comps = prepare_computations(i, r)
+
+    assert w.reflected_color(comps) == BLACK
+
+
+RT_2 = math.sqrt(2)
+
+
+def test_reflect_color_reflective_material() -> None:
+    s1 = Sphere(material=Material(color=color(0.8, 1.0, 0.6), diffuse=0.7, specular=0.2))
+    s2 = Sphere(transform=scaling(0.5, 0.5, 0.5))
+    s3 = Plane(transform=translation(0, -1, 0), material=Material(reflective=0.5))
+    w = World(DEFAULT_LIGHT, [s1, s2, s3])
+
+    r = Ray(point(0, 0, -3), vector(0, -RT_2 / 2, RT_2 / 2))
+    i = Intersection(RT_2, s3)
+    comps = prepare_computations(i, r)
+
+    # Truth color slightly tweaked from textbook to lazily fix floating point issues
+    assert w.reflected_color(comps) == color(0.19033, 0.23791, 0.14274)
+
+
+def test_reflective_shade_hit() -> None:
+    s1 = Sphere(material=Material(color=color(0.8, 1.0, 0.6), diffuse=0.7, specular=0.2))
+    s2 = Sphere(transform=scaling(0.5, 0.5, 0.5))
+    s3 = Plane(transform=translation(0, -1, 0), material=Material(reflective=0.5))
+    w = World(DEFAULT_LIGHT, [s1, s2, s3])
+
+    r = Ray(point(0, 0, -3), vector(0, -RT_2 / 2, RT_2 / 2))
+    i = Intersection(RT_2, s3)
+    comps = prepare_computations(i, r)
+
+    # Truth color slightly tweaked from textbook to lazily fix floating point issues
+    assert w._shade_hit(comps) == color(0.87675, 0.92434, 0.82917)
+
+
+def test_endless_reflection_infinite_recursion_handled() -> None:
+    lt = PointLight(point(0, 0, 0), color(1, 1, 1))
+    lower = Plane(translation(0, -1, 0), Material(reflective=1))
+    upper = Plane(translation(0, 1, 0), Material(reflective=1))
+    w = World(lt, [lower, upper])
+
+    r = Ray(point(0, 0, 0), vector(0, 1, 0))
+    _ = w.color_at(r)  # If recursion isn't handled this will blow up the stack
