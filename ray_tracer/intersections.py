@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 import typing as t
 from collections import UserList
 from dataclasses import dataclass, field
@@ -146,3 +147,32 @@ def prepare_computations(
         n1=n1,
         n2=n2,
     )
+
+
+def schlick(comps: Comps) -> float:
+    """
+    Use the Schlick approximation to determine surface reflectance at the intersection point.
+
+    Fresnel's equations describe the behavior of light on transparent surfaces; when the angle
+    between the eye and the surface is large, the amount of light reflected is small relative to the
+    amount transmitted through the surface, and when the angle is small, the amount of light
+    reflected is larger.
+
+    Schlick's approximations of Fresnel's equations simplify these calculations so we don't have to
+    explicitly account for as much physics.
+    """
+    cos = dot(comps.eye_v, comps.normal)
+
+    # Total internal reflection can only occur if n1 > n2
+    if comps.n1 > comps.n2:
+        n = comps.n1 / comps.n2
+        sin2_t = n**2 * (1.0 - cos**2)
+
+        if sin2_t > 1:
+            return 1.0
+
+        cos_t = math.sqrt(1.0 - sin2_t)
+        cos = cos_t
+
+    r0 = ((comps.n1 - comps.n2) / (comps.n1 + comps.n2)) ** 2
+    return r0 + (1 - r0) * (1 - cos) ** 5

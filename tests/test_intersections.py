@@ -4,7 +4,13 @@ from functools import partial
 import pytest
 
 from ray_tracer import EPSILON
-from ray_tracer.intersections import Comps, Intersection, Intersections, prepare_computations
+from ray_tracer.intersections import (
+    Comps,
+    Intersection,
+    Intersections,
+    prepare_computations,
+    schlick,
+)
 from ray_tracer.materials import Material
 from ray_tracer.rayple import point, vector
 from ray_tracer.rays import Ray
@@ -158,3 +164,31 @@ def test_refraction_indices(
 
     assert comps.n1 == pytest.approx(n1)
     assert comps.n2 == pytest.approx(n2)
+
+
+def test_total_internal_reflection_schlick() -> None:
+    s = Sphere(material=Material(transparency=1, refractive_index=1.5))
+    r = Ray(point(0, 0, RT_2 / 2), vector(0, 1, 0))
+    inters = Intersections([Intersection(-RT_2 / 2, s), Intersection(RT_2 / 2, s)])
+
+    comps = prepare_computations(inters[1], r, inters)
+    assert schlick(comps) == pytest.approx(1.0)
+
+
+def test_total_internal_reflection_schlick_perpendicular() -> None:
+    s = Sphere(material=Material(transparency=1, refractive_index=1.5))
+    r = Ray(point(0, 0, 0), vector(0, 1, 0))
+    inters = Intersections([Intersection(-1, s), Intersection(1, s)])
+
+    comps = prepare_computations(inters[1], r, inters)
+    assert schlick(comps) == pytest.approx(0.04)
+
+
+def test_total_internal_reflection_schlick_small_angle() -> None:
+    s = Sphere(material=Material(transparency=1, refractive_index=1.5))
+    r = Ray(point(0, 0.99, -2), vector(0, 0, 1))
+    inters = Intersections([Intersection(1.8589, s)])
+
+    comps = prepare_computations(inters[0], r, inters)
+    # Truth reflectance tweaked from textbook to lazily fix floating point issues
+    assert schlick(comps) == pytest.approx(0.4887308)

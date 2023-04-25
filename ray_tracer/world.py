@@ -4,7 +4,7 @@ import math
 from dataclasses import dataclass
 
 from ray_tracer.colors import BLACK, WHITE
-from ray_tracer.intersections import Comps, Intersections, prepare_computations
+from ray_tracer.intersections import Comps, Intersections, prepare_computations, schlick
 from ray_tracer.lights import PointLight, lighting
 from ray_tracer.materials import Material
 from ray_tracer.rayple import Rayple, color, dot, point
@@ -57,7 +57,14 @@ class World:  # noqa: D101
         )
         reflected = self.reflected_color(comps, remaining=remaining)
         refracted = self.refracted_color(comps, remaining=remaining)
-        return surface + reflected + refracted
+
+        # Check if the surface material is both transparent and reflective, if it is then we'll use
+        # the Schlick approximation to combine them.
+        if comps.obj.material.reflective > 0 and comps.obj.material.transparency > 0:
+            reflectance = schlick(comps)
+            return surface + (reflected * reflectance) + (refracted * (1 - reflectance))
+        else:
+            return surface + reflected + refracted
 
     def color_at(self, r: Ray, remaining: int = REF_LIMIT) -> Rayple:
         """

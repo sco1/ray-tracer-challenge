@@ -207,16 +207,18 @@ def test_refracted_color() -> None:
 
     comps = prepare_computations(inters[2], r, inters)
     # Truth color slightly tweaked from textbook to lazily fix floating point issues
-    assert w.refracted_color(comps) == color(0, 0.99888, 0.0472)
+    assert w.refracted_color(comps) == color(0, 0.99888, 0.04721)
 
 
 def test_shade_hit_refraction() -> None:
     w = World.default_world()
     floor = Plane(
-        transform=translation(0, -1, 0), material=Material(transparency=0.5, refractive_index=1.5)
+        transform=translation(0, -1, 0),
+        material=Material(transparency=0.5, refractive_index=1.5),
     )
     ball = Sphere(
-        transform=translation(0, -3.5, -0.5), material=Material(color=color(1, 0, 0), ambient=0.5)
+        transform=translation(0, -3.5, -0.5),
+        material=Material(color=color(1, 0, 0), ambient=0.5),
     )
     w.objects.extend([floor, ball])
 
@@ -224,3 +226,21 @@ def test_shade_hit_refraction() -> None:
     inters = Intersections([Intersection(RT_2, floor)])
     comps = prepare_computations(inters[0], r, inters)
     assert w._shade_hit(comps) == color(0.93642, 0.68642, 0.68642)
+
+
+def test_shade_hit_schlick() -> None:
+    w = World.default_world()
+    floor = Plane(
+        transform=translation(0, -1, 0),
+        material=Material(reflective=0.5, transparency=0.5, refractive_index=1.5),
+    )
+    ball = Sphere(
+        transform=translation(0, -3.5, -0.5),
+        material=Material(color=color(1, 0, 0), ambient=0.5),
+    )
+    w.objects.extend([floor, ball])
+
+    r = Ray(point(0, 0, -3), vector(0, -RT_2 / 2, RT_2 / 2))
+    inters = Intersections([Intersection(RT_2, floor)])
+    comps = prepare_computations(inters[0], r, inters)
+    assert w._shade_hit(comps) == color(0.93391, 0.69643, 0.69243)
