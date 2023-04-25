@@ -1,19 +1,20 @@
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 
 from ray_tracer.colors import BLACK, WHITE
 from ray_tracer.intersections import Comps, Intersections, prepare_computations
 from ray_tracer.lights import PointLight, lighting
 from ray_tracer.materials import Material
-from ray_tracer.rayple import Rayple, color, point
+from ray_tracer.rayple import Rayple, color, dot, point
 from ray_tracer.rays import Ray
 from ray_tracer.shapes import Shape, Sphere
 from ray_tracer.transforms import scaling
 
 DEFAULT_LIGHT = PointLight(point(-10, 10, -10), WHITE)
 
-REFLECTION_LIMIT = 5
+REF_LIMIT = 5
 
 
 @dataclass(slots=True)
@@ -34,7 +35,7 @@ class World:  # noqa: D101
         all_intersections.sort()
         return all_intersections
 
-    def _shade_hit(self, comps: Comps, remaining: int = REFLECTION_LIMIT) -> Rayple:
+    def _shade_hit(self, comps: Comps, remaining: int = REF_LIMIT) -> Rayple:
         """
         Calculate the color at the provided pre-computed intersection point in the world.
 
@@ -55,9 +56,10 @@ class World:  # noqa: D101
             in_shadow=shadowed,
         )
         reflected = self.reflected_color(comps, remaining=remaining)
-        return surface + reflected
+        refracted = self.refracted_color(comps, remaining=remaining)
+        return surface + reflected + refracted
 
-    def color_at(self, r: Ray, remaining: int = REFLECTION_LIMIT) -> Rayple:
+    def color_at(self, r: Ray, remaining: int = REF_LIMIT) -> Rayple:
         """
         Calculate the color at the `Ray`'s first intersection point in the world.
 
@@ -88,17 +90,15 @@ class World:  # noqa: D101
         else:
             return False
 
-    def reflected_color(self, comps: Comps, remaining: int = REFLECTION_LIMIT) -> Rayple:
+    def reflected_color(self, comps: Comps, remaining: int = REF_LIMIT) -> Rayple:
         """
         Determine the reflected color for the provided precomputed intersection.
 
         The `remaining` arg is included to prevent infinite reflections from blowing up the stack by
-        returning Black if the reflection limit has been reached. This parameter is decremented in
-        the `reflected_color` method.
+        returning Black if the reflection limit has been reached.
         """
         if comps.obj.material.reflective == 0:
             return BLACK
-
         if remaining <= 0:
             return BLACK
 
@@ -107,6 +107,36 @@ class World:  # noqa: D101
         reflect_ray = Ray(comps.over_point, comps.reflect_v)
         col = self.color_at(reflect_ray, remaining=remaining - 1)
         return col * comps.obj.material.reflective
+
+    def refracted_color(self, comps: Comps, remaining: int = REF_LIMIT) -> Rayple:
+        """
+        Determine the reflected color for the provided precomputed intersection.
+
+        The `remaining` arg is included to prevent infinite reflections from blowing up the stack by
+        returning Black if the reflection limit has been reached.
+        """
+        if comps.obj.material.transparency == 0:
+            return BLACK
+        if remaining <= 0:
+            return BLACK
+
+        # Check for total internal reflection
+        # If light enters a material with a sufficiently acute angle, and the new medium has a lower
+        # refractive index than the old, then the light will reflect off the interface rather than
+        # pass through it
+        n_ratio = comps.n1 / comps.n2
+        cos_i = dot(comps.eye_v, comps.normal)
+        sin2_t = n_ratio**2 * (1 - cos_i**2)
+
+        if sin2_t > 1:
+            return BLACK
+
+        cos_t = math.sqrt(1.0 - sin2_t)
+        direction = comps.normal * (n_ratio * cos_i - cos_t) - comps.eye_v * n_ratio
+        refract_ray = Ray(comps.under_point, direction)
+
+        color = self.color_at(refract_ray, remaining - 1) * comps.obj.material.transparency
+        return color
 
     @classmethod
     def default_world(cls) -> World:  # pragma: no cover

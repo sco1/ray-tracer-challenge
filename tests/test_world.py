@@ -3,9 +3,10 @@ import math
 import pytest
 
 from ray_tracer.colors import BLACK, WHITE
-from ray_tracer.intersections import Intersection, prepare_computations
+from ray_tracer.intersections import Intersection, Intersections, prepare_computations
 from ray_tracer.lights import PointLight
 from ray_tracer.materials import Material
+from ray_tracer.patterns import _TestPattern
 from ray_tracer.rayple import Rayple, color, point, vector
 from ray_tracer.rays import Ray
 from ray_tracer.shapes import Plane, Sphere
@@ -143,3 +144,83 @@ def test_endless_reflection_infinite_recursion_handled() -> None:
 
     r = Ray(point(0, 0, 0), vector(0, 1, 0))
     _ = w.color_at(r)  # If recursion isn't handled this will blow up the stack
+
+
+def test_refraction_opaque_surface() -> None:
+    w = World.default_world()
+    r = Ray(point(0, 0, -5), vector(0, 0, 1))
+    inters = Intersections([Intersection(4, w.objects[0]), Intersection(6, w.objects[0])])
+
+    comps = prepare_computations(inters[0], r, inters)
+    assert w.refracted_color(comps) == BLACK
+
+
+def test_refraction_max_recursion_is_black() -> None:
+    lt = PointLight(point(0, 0, 0), color(1, 1, 1))
+    s = Sphere(material=Material(transparency=1, refractive_index=1.5))
+    w = World(lt, [s])
+    r = Ray(point(0, 0, -5), vector(0, 0, 1))
+    inters = Intersections([Intersection(4, s), Intersection(6, s)])
+
+    comps = prepare_computations(inters[0], r, inters)
+    assert w.refracted_color(comps, remaining=0) == BLACK
+
+
+def test_total_internal_reflection() -> None:
+    lt = PointLight(point(0, 0, 0), color(1, 1, 1))
+    s1 = Sphere(material=Material(transparency=1, refractive_index=1.5))
+    s2 = Sphere(transform=scaling(0.5, 0.5, 0.5))
+    w = World(lt, [s1, s2])
+    r = Ray(point(0, 0, RT_2 / 2), vector(0, 1, 0))
+    inters = Intersections([Intersection(-RT_2 / 2, s1), Intersection(RT_2 / 2, s1)])
+
+    comps = prepare_computations(inters[1], r, inters)
+    assert w.refracted_color(comps) == BLACK
+
+
+def test_refracted_color() -> None:
+    lt = PointLight(point(0, 0, 0), color(1, 1, 1))
+    a = Sphere(
+        material=Material(
+            color=color(0.8, 1.0, 0.6),
+            diffuse=0.7,
+            specular=0.2,
+            ambient=1.0,
+            pattern=_TestPattern(),
+        )
+    )
+    b = Sphere(
+        transform=scaling(0.5, 0.5, 0.5),
+        material=Material(transparency=1.0, refractive_index=1.5),
+    )
+    w = World(lt, [a, b])
+
+    r = Ray(point(0, 0, 0.1), vector(0, 1, 0))
+    inters = Intersections(
+        [
+            Intersection(-0.9899, a),
+            Intersection(-0.4899, b),
+            Intersection(0.4899, b),
+            Intersection(0.9899, a),
+        ]
+    )
+
+    comps = prepare_computations(inters[2], r, inters)
+    # Truth color slightly tweaked from textbook to lazily fix floating point issues
+    assert w.refracted_color(comps) == color(0, 0.99888, 0.0472)
+
+
+def test_shade_hit_refraction() -> None:
+    w = World.default_world()
+    floor = Plane(
+        transform=translation(0, -1, 0), material=Material(transparency=0.5, refractive_index=1.5)
+    )
+    ball = Sphere(
+        transform=translation(0, -3.5, -0.5), material=Material(color=color(1, 0, 0), ambient=0.5)
+    )
+    w.objects.extend([floor, ball])
+
+    r = Ray(point(0, 0, -3), vector(0, -RT_2 / 2, RT_2 / 2))
+    inters = Intersections([Intersection(RT_2, floor)])
+    comps = prepare_computations(inters[0], r, inters)
+    assert w._shade_hit(comps) == color(0.93642, 0.68642, 0.68642)

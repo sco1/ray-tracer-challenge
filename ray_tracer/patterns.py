@@ -5,7 +5,7 @@ import typing as t
 from dataclasses import dataclass, field
 
 from ray_tracer.colors import BLACK, WHITE
-from ray_tracer.rayple import Rayple
+from ray_tracer.rayple import Rayple, color
 from ray_tracer.transforms import Matrix
 
 if t.TYPE_CHECKING:
@@ -80,3 +80,11 @@ class Checker(Pattern):
             return self.a
         else:
             return self.b
+
+
+@dataclass(frozen=True, slots=True)
+class _TestPattern(Pattern):
+    """For testing purposes only; color based on XYZ components."""
+
+    def at_point(self, pt: Rayple) -> Rayple:  # noqa: D102
+        return color(*pt)
