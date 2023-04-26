@@ -1,7 +1,7 @@
 import math
 from dataclasses import dataclass, field
 
-from ray_tracer import EPSILON
+from ray_tracer import EPSILON, NUMERIC_T
 from ray_tracer.intersections import Intersection, Intersections
 from ray_tracer.materials import Material
 from ray_tracer.rayple import Rayple, RaypleType, dot, point, vector
@@ -124,3 +124,82 @@ class Plane(Shape):
     def _local_normal_at(self, local_point: Rayple) -> Rayple:
         # The normal of a plane is constant everywhere
         return vector(0, 1, 0)
+
+
+@dataclass(frozen=True, slots=True, eq=False)
+class Cube(Shape):
+    """
+    Cube Representation.
+
+    Cubes are modeled as axis-aligned bounding boxes; i.e. its sides are all aligned with the
+    scene's axes. Cubes will begin centered at the origin and extend from `-1` to `+1` along each
+    axis; transformation matrices can be used to manipulate them further within the scene.
+    """
+
+    def _local_intersect(self, transformed_ray: Ray) -> Intersections:
+        # Treat the cube as being composed of six planes, one for each face. If the ray intersects
+        # these planes in just the right way, it means it intersects the cube as well. Use a helper
+        # function to consider these planes in parallel planes; if the cube is intersected then
+        # there will be 4 points of intersection, and the intersection with the cube itself will be
+        # the largest of the two closest points and the smallest of the two largest points.
+        xt_min, xt_max = _check_axis(transformed_ray.origin.x, transformed_ray.direction.x)
+        yt_min, yt_max = _check_axis(transformed_ray.origin.y, transformed_ray.direction.y)
+        zt_min, zt_max = _check_axis(transformed_ray.origin.z, transformed_ray.direction.z)
+
+        t_min = max(xt_min, yt_min, zt_min)
+        t_max = min(xt_max, yt_max, zt_max)
+
+        if t_min > t_max:
+            return Intersections([])
+        else:
+            return Intersections([Intersection(t_min, self), Intersection(t_max, self)])
+
+    def _local_normal_at(self, local_point: Rayple) -> Rayple:
+        # We know which plane we're on because it has the component with the largest absolute value
+        # In the ideal case it will be the component that equals 1, but we have floats so we can't
+        # get by that easy
+        # Use a custom max loop so we can enforce that corners are on either the +x or -x faces
+        for i, comp in enumerate(local_point):
+            if i == 0:
+                max_c = abs(comp)
+                idx = 0
+                continue
+
+            if abs(comp) > max_c:
+                max_c = abs(comp)
+                idx = i
+
+        print(local_point, max_c, idx)
+
+        if idx == 0:
+            return vector(local_point.x, 0, 0)
+        elif idx == 1:
+            return vector(0, local_point.y, 0)
+        else:
+            return vector(0, 0, local_point.z)
+
+
+def _check_axis(origin: NUMERIC_T, direction: NUMERIC_T) -> tuple[NUMERIC_T, NUMERIC_T]:
+    """
+    Locate the plane-ray intersection times, if present.
+
+    Each pair of parallel lines will have a minimum t closest to the ray origin, and a maximum t
+    farther away; we want to consider the largest minimum t value and the smallest maximum t value
+    as the plane's intersection points.
+    """
+    t_min_numerator = -1 - origin
+    t_max_numerator = 1 - origin
+
+    if abs(direction) >= EPSILON:
+        t_min = t_min_numerator / direction
+        t_max = t_max_numerator / direction
+    else:
+        # If the denominator is 0, multiply by infinity rather than dividing by 0 so we retain the
+        # correct sign
+        t_min = t_min_numerator * math.inf
+        t_max = t_max_numerator * math.inf
+
+    if t_min > t_max:
+        t_min, t_max = t_max, t_min
+
+    return t_min, t_max
