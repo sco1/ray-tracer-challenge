@@ -184,8 +184,8 @@ class Cube(Shape):
         Locate the plane-ray intersection times, if present.
 
         Each pair of parallel lines will have a minimum t closest to the ray origin, and a maximum t
-        farther away; we want to consider the largest minimum t value and the smallest maximum t value
-        as the plane's intersection points.
+        farther away; we want to consider the largest minimum t value and the smallest maximum t
+        value as the plane's intersection points.
         """
         t_min_numerator = -1 - origin
         t_max_numerator = 1 - origin
@@ -194,8 +194,8 @@ class Cube(Shape):
             t_min = t_min_numerator / direction
             t_max = t_max_numerator / direction
         else:
-            # If the denominator is 0, multiply by infinity rather than dividing by 0 so we retain the
-            # correct sign
+            # If the denominator is 0, multiply by infinity rather than dividing by 0 so we retain
+            # the correct sign
             t_min = t_min_numerator * math.inf
             t_max = t_max_numerator * math.inf
 
@@ -268,7 +268,7 @@ class Cylinder(Shape):
 
         return (x**2 + z**2) <= 1
 
-    def _intersect_caps(self, transformed_ray: Rayple, inters: Intersections) -> Intersections:
+    def _intersect_caps(self, transformed_ray: Ray, inters: Intersections) -> Intersections:
         """Check for any cap intersection(s) and add them to the `Intersections` collection."""
         if not self.closed:
             return inters
@@ -296,3 +296,117 @@ class Cylinder(Shape):
         else:
             # Otherwise, it's not on one of the caps
             return vector(local_point.x, 0, local_point.z)
+
+
+@dataclass(frozen=True, slots=True, eq=False)
+class Cone(Shape):
+    """
+    Cone representation.
+
+    Cones are implemented as double-napped cones; one cone is upside-down and the other right-side
+    up, with their tips meeting at the origin and extending toward infinity in both directions along
+    the y-axis. Cones are allowed to be truncated at one or both ends, and to be either open or
+    capped. Transformation matrices can be used to manipulate them further within the scene.
+
+    NOTE: If a cone is truncated in one or both directions, the provided bounding value(s) are
+    not considered inclusive.
+
+    NOTE: For simplicity, the intersection between a cone and a tangent ray will result in two
+    identical intersections.
+    """
+
+    minimum: NUMERIC_T = -math.inf
+    maximum: NUMERIC_T = math.inf
+    closed: bool = False
+
+    def _local_intersect(self, transformed_ray: Ray) -> Intersections:
+        inters = Intersections([])
+
+        a = (
+            transformed_ray.direction.x**2
+            - transformed_ray.direction.y**2
+            + transformed_ray.direction.z**2
+        )
+        b = (
+            2 * transformed_ray.origin.x * transformed_ray.direction.x
+            - 2 * transformed_ray.origin.y * transformed_ray.direction.y
+            + 2 * transformed_ray.origin.z * transformed_ray.direction.z
+        )
+        c = (
+            transformed_ray.origin.x**2
+            - transformed_ray.origin.y**2
+            + transformed_ray.origin.z**2
+        )
+
+        # If a is 0, the ray is parallel to one of the cones halves but may intersect the other
+        # half of the cone.
+        if math.isclose(a, 0):
+            # If b is also 0, then the ray misses entirely
+            if not math.isclose(b, 0):
+                t = -c / (2 * b)
+                inters.append(Intersection(t, self))
+                inters = self._intersect_caps(transformed_ray, inters)
+                return inters
+
+        disc = b**2 - 4 * a * c
+        if disc < 0:
+            # Ray does not intersect the cone
+            return inters
+
+        t0 = (-b - math.sqrt(disc)) / (2 * a)
+        t1 = (-b + math.sqrt(disc)) / (2 * a)
+        if t0 > t1:  # pragma: no branch
+            t0, t1 = t1, t0
+
+        y0 = transformed_ray.origin.y + t0 * transformed_ray.direction.y
+        if self.minimum < y0 < self.maximum:
+            inters.append(Intersection(t0, self))
+
+        y1 = transformed_ray.origin.y + t1 * transformed_ray.direction.y
+        if self.minimum < y1 < self.maximum:
+            inters.append(Intersection(t1, self))
+
+        inters = self._intersect_caps(transformed_ray, inters)
+
+        return inters
+
+    @staticmethod
+    def _check_cap(transformed_ray: Ray, t: NUMERIC_T, cap_y: NUMERIC_T) -> bool:
+        """See if the intersection at `t` is within a radius of `cap_y` from the y-axis."""
+        x = transformed_ray.origin.x + t * transformed_ray.direction.x
+        z = transformed_ray.origin.z + t * transformed_ray.direction.z
+
+        return (x**2 + z**2) <= abs(cap_y)
+
+    def _intersect_caps(self, transformed_ray: Ray, inters: Intersections) -> Intersections:
+        """Check for any cap intersection(s) and add them to the `Intersections` collection."""
+        if not self.closed:
+            return inters
+
+        # Check lower cap intersection
+        t = (self.minimum - transformed_ray.origin.y) / transformed_ray.direction.y
+        if self._check_cap(transformed_ray, t, self.minimum):
+            inters.append(Intersection(t, self))
+
+        # Check upper cap intersection
+        t = (self.maximum - transformed_ray.origin.y) / transformed_ray.direction.y
+        if self._check_cap(transformed_ray, t, self.maximum):
+            inters.append(Intersection(t, self))
+
+        return inters
+
+    def _local_normal_at(self, local_point: Rayple) -> Rayple:
+        # Cap radius is directly related to y; if the point lies less than y units from the y axis,
+        # and is within EPSILON of one of the caps, then it must be on one of the caps
+        dist = local_point.x**2 + local_point.z**2
+        if dist < abs(local_point.y) and local_point.y >= (self.maximum - EPSILON):
+            return vector(0, 1, 0)
+        elif dist < abs(local_point.y) and local_point.y <= (self.minimum + EPSILON):
+            return vector(0, -1, 0)
+        else:
+            # Otherwise, it's not on one of the caps
+            norm_y = math.sqrt(dist)
+            if local_point.y > 0:
+                norm_y = -norm_y
+
+            return vector(local_point.x, norm_y, local_point.z)
