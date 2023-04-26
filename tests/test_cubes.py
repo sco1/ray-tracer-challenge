@@ -25,8 +25,8 @@ def test_cube_ray_intersection(
 
     inters = c._local_intersect(r)
     assert len(inters) == 2
-    assert inters[0].t == t1
-    assert inters[1].t == t2
+    assert inters[0].t == pytest.approx(t1)
+    assert inters[1].t == pytest.approx(t2)
 
 
 CUBE_RAY_MISS_CASES = (

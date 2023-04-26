@@ -75,7 +75,7 @@ class Sphere(Shape):
     Sphere position, size, and rotation can be adjusted by passing in a non-identity `transform`
     matrix.
 
-    NOTE: For simplicity, the ntersection between a sphere and a tangent ray will result in two
+    NOTE: For simplicity, the intersection between a sphere and a tangent ray will result in two
     identical intersections.
     """
 
@@ -129,7 +129,7 @@ class Plane(Shape):
 @dataclass(frozen=True, slots=True, eq=False)
 class Cube(Shape):
     """
-    Cube Representation.
+    Cube representation.
 
     Cubes are modeled as axis-aligned bounding boxes; i.e. its sides are all aligned with the
     scene's axes. Cubes will begin centered at the origin and extend from `-1` to `+1` along each
@@ -142,9 +142,9 @@ class Cube(Shape):
         # function to consider these planes in parallel planes; if the cube is intersected then
         # there will be 4 points of intersection, and the intersection with the cube itself will be
         # the largest of the two closest points and the smallest of the two largest points.
-        xt_min, xt_max = _check_axis(transformed_ray.origin.x, transformed_ray.direction.x)
-        yt_min, yt_max = _check_axis(transformed_ray.origin.y, transformed_ray.direction.y)
-        zt_min, zt_max = _check_axis(transformed_ray.origin.z, transformed_ray.direction.z)
+        xt_min, xt_max = self._check_axis(transformed_ray.origin.x, transformed_ray.direction.x)
+        yt_min, yt_max = self._check_axis(transformed_ray.origin.y, transformed_ray.direction.y)
+        zt_min, zt_max = self._check_axis(transformed_ray.origin.z, transformed_ray.direction.z)
 
         t_min = max(xt_min, yt_min, zt_min)
         t_max = min(xt_max, yt_max, zt_max)
@@ -178,28 +178,121 @@ class Cube(Shape):
         else:
             return vector(0, 0, local_point.z)
 
+    @staticmethod
+    def _check_axis(origin: NUMERIC_T, direction: NUMERIC_T) -> tuple[NUMERIC_T, NUMERIC_T]:
+        """
+        Locate the plane-ray intersection times, if present.
 
-def _check_axis(origin: NUMERIC_T, direction: NUMERIC_T) -> tuple[NUMERIC_T, NUMERIC_T]:
+        Each pair of parallel lines will have a minimum t closest to the ray origin, and a maximum t
+        farther away; we want to consider the largest minimum t value and the smallest maximum t value
+        as the plane's intersection points.
+        """
+        t_min_numerator = -1 - origin
+        t_max_numerator = 1 - origin
+
+        if abs(direction) >= EPSILON:
+            t_min = t_min_numerator / direction
+            t_max = t_max_numerator / direction
+        else:
+            # If the denominator is 0, multiply by infinity rather than dividing by 0 so we retain the
+            # correct sign
+            t_min = t_min_numerator * math.inf
+            t_max = t_max_numerator * math.inf
+
+        if t_min > t_max:
+            t_min, t_max = t_max, t_min
+
+        return t_min, t_max
+
+
+@dataclass(frozen=True, slots=True, eq=False)
+class Cylinder(Shape):
     """
-    Locate the plane-ray intersection times, if present.
+    Cylinder representation.
 
-    Each pair of parallel lines will have a minimum t closest to the ray origin, and a maximum t
-    farther away; we want to consider the largest minimum t value and the smallest maximum t value
-    as the plane's intersection points.
+    Cylinders are instantiated with a radios of `1` and treated as infinitely long along the y-axis;
+    cylinders are also allowed to be truncated at one or both ends, and to be either open or capped.
+    Transformation matrices can be used to manipulate them further within the scene.
+
+    NOTE: If a cylinder is truncated in one or both directions, the provided bounding value(s) are
+    not considered inclusive.
+
+    NOTE: For simplicity, the intersection between a cylinder and a tangent ray will result in two
+    identical intersections.
     """
-    t_min_numerator = -1 - origin
-    t_max_numerator = 1 - origin
 
-    if abs(direction) >= EPSILON:
-        t_min = t_min_numerator / direction
-        t_max = t_max_numerator / direction
-    else:
-        # If the denominator is 0, multiply by infinity rather than dividing by 0 so we retain the
-        # correct sign
-        t_min = t_min_numerator * math.inf
-        t_max = t_max_numerator * math.inf
+    minimum: NUMERIC_T = -math.inf
+    maximum: NUMERIC_T = math.inf
+    closed: bool = False
 
-    if t_min > t_max:
-        t_min, t_max = t_max, t_min
+    def _local_intersect(self, transformed_ray: Ray) -> Intersections:
+        inters = Intersections([])
 
-    return t_min, t_max
+        a = transformed_ray.direction.x**2 + transformed_ray.direction.z**2
+        if math.isclose(a, 0):
+            # Ray is parallel to the y axis, check for cap intersections before returning
+            inters = self._intersect_caps(transformed_ray, inters)
+            return inters
+
+        b = (
+            2 * transformed_ray.origin.x * transformed_ray.direction.x
+            + 2 * transformed_ray.origin.z * transformed_ray.direction.z
+        )
+        c = transformed_ray.origin.x**2 + transformed_ray.origin.z**2 - 1
+        disc = b**2 - 4 * a * c
+        if disc < 0:
+            # Ray does not intersect the cylinder
+            return inters
+
+        t0 = (-b - math.sqrt(disc)) / (2 * a)
+        t1 = (-b + math.sqrt(disc)) / (2 * a)
+        if t0 > t1:  # pragma: no branch
+            t0, t1 = t1, t0
+
+        y0 = transformed_ray.origin.y + t0 * transformed_ray.direction.y
+        if self.minimum < y0 < self.maximum:
+            inters.append(Intersection(t0, self))
+
+        y1 = transformed_ray.origin.y + t1 * transformed_ray.direction.y
+        if self.minimum < y1 < self.maximum:
+            inters.append(Intersection(t1, self))
+
+        inters = self._intersect_caps(transformed_ray, inters)
+        return inters
+
+    @staticmethod
+    def _check_cap(transformed_ray: Ray, t: NUMERIC_T) -> bool:
+        """See if the intersection at `t` is within a radius of `1` from the y-axis."""
+        x = transformed_ray.origin.x + t * transformed_ray.direction.x
+        z = transformed_ray.origin.z + t * transformed_ray.direction.z
+
+        return (x**2 + z**2) <= 1
+
+    def _intersect_caps(self, transformed_ray: Rayple, inters: Intersections) -> Intersections:
+        """Check for any cap intersection(s) and add them to the `Intersections` collection."""
+        if not self.closed:
+            return inters
+
+        # Check lower cap intersection
+        t = (self.minimum - transformed_ray.origin.y) / transformed_ray.direction.y
+        if self._check_cap(transformed_ray, t):
+            inters.append(Intersection(t, self))
+
+        # Check upper cap intersection
+        t = (self.maximum - transformed_ray.origin.y) / transformed_ray.direction.y
+        if self._check_cap(transformed_ray, t):
+            inters.append(Intersection(t, self))
+
+        return inters
+
+    def _local_normal_at(self, local_point: Rayple) -> Rayple:
+        # If the point lies less than one unit from the y axis, and is within EPSILON of one of the
+        # caps, then it must be on one of the caps
+        dist = local_point.x**2 + local_point.z**2
+        if dist < 1 and local_point.y >= (self.maximum - EPSILON):
+            return vector(0, 1, 0)
+        elif dist < 1 and local_point.y <= (self.minimum + EPSILON):
+            return vector(0, -1, 0)
+        else:
+            # Otherwise, it's not on one of the caps
+            return vector(local_point.x, 0, local_point.z)
