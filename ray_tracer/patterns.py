@@ -31,7 +31,7 @@ class Pattern:
 
     def at_object(self, obj: Shape, world_pt: Rayple) -> Rayple:
         """Apply the appropriate transformations to shift the query point into pattern space."""
-        object_pt = obj.transform.inv() * world_pt
+        object_pt = obj.world_to_object(world_pt)
         pattern_pt = self.transform.inv() * object_pt
 
         return self.at_point(pattern_pt)

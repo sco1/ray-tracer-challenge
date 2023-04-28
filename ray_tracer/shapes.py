@@ -58,7 +58,7 @@ class Shape:
 
         # To account for transformations, we have to shift the query point from world space to the
         # object space, otherwise our initial normal is not going to be accurate
-        local_point = self.transform.inv() * query
+        local_point = self.world_to_object(query)
         local_normal = self._local_normal_at(local_point)
 
         # Once we've shifted to object space to get the object normal, we need to shift this back to
@@ -67,10 +67,26 @@ class Shape:
         # Technically, we should be finding the 3x3 submatrix of the transform in order to prevent
         # any translation from messing with the rayple type; to get around this, we can just make a
         # new vector from the components
-        world_normal = self.transform.inv().transpose() * local_normal
-        world_normal = vector(*world_normal)
+        world_normal = self.normal_to_world(local_normal)
 
-        return world_normal.normalize()
+        return world_normal
+
+    def world_to_object(self, pt: Rayple) -> Rayple:
+        """Take a point in world space and transform to object space, considering any parent."""
+        if self.parent is not None:
+            pt = self.parent.world_to_object(pt)
+
+        return self.transform.inv() * pt
+
+    def normal_to_world(self, norm: Rayple) -> Rayple:
+        """Take a normal in object space and transform to world space, considering any parent."""
+        norm = self.transform.inv().transpose() * norm
+        new_norm = vector(*norm).normalize()
+
+        if self.parent is not None:
+            new_norm = self.parent.normal_to_world(new_norm)
+
+        return new_norm
 
 
 @dataclass(slots=True, eq=False)
@@ -433,10 +449,15 @@ class Group(Shape):
     children: set[Shape] = field(default_factory=set)
 
     def _local_intersect(self, transformed_ray: Ray) -> Intersections:
-        ...
+        all_inters = Intersections([])
+        for child in self.children:
+            all_inters.extend(child.intersect(transformed_ray))
+
+        all_inters.sort()
+        return all_inters
 
     def _local_normal_at(self, local_point: Rayple) -> Rayple:
-        ...
+        raise NotImplementedError("Groups shold be delegating this call to children.")
 
     def add_child(self, other: Shape) -> None:
         """Add a `Shape` subclass to the group & set its `parent` attribute appropriately."""

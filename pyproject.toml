@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "Ray-Tracer-Challenge"
-version = "0.1.0"
+version = "1.0.0"
 description = "A Python Implementation of Jamis Buck's Ray Tracer Challenge"
 authors = ["sco1 <sco1.git@gmail.com>"]
 
@@ -15,6 +15,7 @@ classifiers = [
     "Programming Language :: Python",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3 :: Only",
     "Topic :: Multimedia :: Graphics",
     "Topic :: Multimedia :: Graphics :: 3D Rendering",
@@ -33,7 +34,6 @@ numpy = "^1.23"
 
 [tool.poetry.dev-dependencies]
 black = "*"
-bump2version = "*"
 flake8 = "*"
 flake8-annotations = "*"
 flake8-bugbear = "*"
