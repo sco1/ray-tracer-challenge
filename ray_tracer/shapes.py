@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import math
 from dataclasses import dataclass, field
 
@@ -9,7 +11,7 @@ from ray_tracer.rays import Ray
 from ray_tracer.transforms import Matrix
 
 
-@dataclass(frozen=True, slots=True, eq=False)
+@dataclass(slots=True, eq=False)
 class Shape:
     """
     Base class for creating shape objects; this is not intended to be instantiated.
@@ -17,11 +19,16 @@ class Shape:
     Child classes must define `_local_intersect` and `_local_normal_at` to calculate their
     respective local values, which are then transformed into world coordinates by the base methods.
 
+    Shapes may be added to a `Group` instance, which will set the `Shape`'s `parent` attribute to
+    the group instance. A `Shape` can only be a member of one `Group`; the `Group` instance does not
+    check for any current membership before overwriting the `parent`.
+
     NOTE: Shapes are compared by object ID only, so no 2 instances will compare `True`.
     """
 
     transform: Matrix = field(default_factory=Matrix.identity)
     material: Material = Material()
+    parent: Group | None = None
 
     def _local_intersect(self, local_ray: Ray) -> Intersections:  # pragma: no cover
         raise NotImplementedError
@@ -66,7 +73,7 @@ class Shape:
         return world_normal.normalize()
 
 
-@dataclass(frozen=True, slots=True, eq=False)
+@dataclass(slots=True, eq=False)
 class Sphere(Shape):
     """
     Unit sphere representation.
@@ -101,7 +108,7 @@ class Sphere(Shape):
         return local_point - point(0, 0, 0)
 
 
-@dataclass(frozen=True, slots=True, eq=False)
+@dataclass(slots=True, eq=False)
 class Plane(Shape):
     """
     Plane representation.
@@ -126,7 +133,7 @@ class Plane(Shape):
         return vector(0, 1, 0)
 
 
-@dataclass(frozen=True, slots=True, eq=False)
+@dataclass(slots=True, eq=False)
 class Cube(Shape):
     """
     Cube representation.
@@ -205,7 +212,7 @@ class Cube(Shape):
         return t_min, t_max
 
 
-@dataclass(frozen=True, slots=True, eq=False)
+@dataclass(slots=True, eq=False)
 class Cylinder(Shape):
     """
     Cylinder representation.
@@ -298,7 +305,7 @@ class Cylinder(Shape):
             return vector(local_point.x, 0, local_point.z)
 
 
-@dataclass(frozen=True, slots=True, eq=False)
+@dataclass(slots=True, eq=False)
 class Cone(Shape):
     """
     Cone representation.
@@ -410,3 +417,28 @@ class Cone(Shape):
                 norm_y = -norm_y
 
             return vector(local_point.x, norm_y, local_point.z)
+
+
+@dataclass(slots=True, eq=False)
+class Group(Shape):
+    """
+    Shape group representation.
+
+    Groups are abstract shapes with no surface of their own, taking their form instead from the
+    shapes they contain. This allows us to organize them into trees, with groups containing both
+    other groups and concrete primatives. Group transforms are applied implicitly to any shapes
+    contained by the group, simplifying calculations on its members.
+    """
+
+    children: set[Shape] = field(default_factory=set)
+
+    def _local_intersect(self, transformed_ray: Ray) -> Intersections:
+        ...
+
+    def _local_normal_at(self, local_point: Rayple) -> Rayple:
+        ...
+
+    def add_child(self, other: Shape) -> None:
+        """Add a `Shape` subclass to the group & set its `parent` attribute appropriately."""
+        self.children.add(other)
+        other.parent = self
