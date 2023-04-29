@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from ray_tracer import EPSILON, NUMERIC_T
 from ray_tracer.intersections import Intersection, Intersections
 from ray_tracer.materials import Material
-from ray_tracer.rayple import Rayple, RaypleType, dot, point, vector
+from ray_tracer.rayple import Rayple, RaypleType, cross, dot, point, vector
 from ray_tracer.rays import Ray
 from ray_tracer.transforms import Matrix
 
@@ -463,3 +463,57 @@ class Group(Shape):
         """Add a `Shape` subclass to the group & set its `parent` attribute appropriately."""
         self.children.add(other)
         other.parent = self
+
+
+@dataclass(kw_only=True, slots=True, eq=False)  # kwonly so we don't have to specify vertex defaults
+class Triangle(Shape):
+    """
+    Triangle representation.
+
+    Triangles are composed using three points. The constructor also pre-computes the edge vectors
+    and the triangle's normal.
+    """
+
+    p1: Rayple
+    p2: Rayple
+    p3: Rayple
+
+    e1: Rayple = field(init=False)
+    e2: Rayple = field(init=False)
+    norm: Rayple = field(init=False)
+
+    def __post_init__(self) -> None:
+        self.e1 = self.p2 - self.p1
+        self.e2 = self.p3 - self.p1
+        self.norm = cross(self.e2, self.e1).normalize()
+
+    def _local_intersect(self, transformed_ray: Ray) -> Intersections:
+        inters = Intersections([])
+
+        # First see if the ray is parallel
+        dir_cross_e2 = cross(transformed_ray.direction, self.e2)
+        det = dot(self.e1, dir_cross_e2)
+        if abs(det) < EPSILON:
+            return inters
+
+        # Next see if the ray misses over one of the edges
+        f = 1.0 / det
+        p1_to_origin = transformed_ray.origin - self.p1
+        u = f * dot(p1_to_origin, dir_cross_e2)
+        if u < 0 or u > 1:
+            return inters
+
+        origin_cross_e1 = cross(p1_to_origin, self.e1)
+        v = f * dot(transformed_ray.direction, origin_cross_e1)
+        if v < 0 or (u + v) > 1:
+            return inters
+
+        # Otherwise, we should have a hit
+        t = f * dot(self.e2, origin_cross_e1)
+        inters.append(Intersection(t, self))
+
+        return inters
+
+    def _local_normal_at(self, local_point: Rayple) -> Rayple:
+        # Normal vector is the same for the entire triangle
+        return self.norm
