@@ -19,6 +19,11 @@ class Intersection:  # noqa: D101
     t: NUMERIC_T
     obj: Shape
 
+    # Only relevant for the Moller-Trumbore algorithm & triangle intersections
+    # Values are expected to be between 0 and 1
+    u: NUMERIC_T = 0
+    v: NUMERIC_T = 0
+
 
 class Intersections(UserList):
     """

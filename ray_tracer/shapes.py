@@ -192,8 +192,6 @@ class Cube(Shape):
                 max_c = abs(comp)
                 idx = i
 
-        print(local_point, max_c, idx)
-
         if idx == 0:
             return vector(local_point.x, 0, 0)
         elif idx == 1:
@@ -510,10 +508,23 @@ class Triangle(Shape):
 
         # Otherwise, we should have a hit
         t = f * dot(self.e2, origin_cross_e1)
-        inters.append(Intersection(t, self))
+        inters.append(Intersection(t=t, obj=self, u=u, v=v))
 
         return inters
 
     def _local_normal_at(self, local_point: Rayple) -> Rayple:
         # Normal vector is the same for the entire triangle
         return self.norm
+
+
+@dataclass(kw_only=True, slots=True, eq=False)  # kwonly so we don't have to specify vertex defaults
+class SmoothTriangle(Triangle):
+    """
+    Smooth triangle representation.
+
+    Smooth triangles are like triangles, but with normal vectors assigned to each vertex.
+    """
+
+    n1: Rayple
+    n2: Rayple
+    n3: Rayple
