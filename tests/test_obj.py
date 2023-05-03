@@ -185,7 +185,8 @@ def test_faces_with_normals() -> None:
         """
     )
 
-    verts, tris, _, norms = parse_obj_src(src)
+    tris: list[SmoothTriangle]
+    verts, tris, _, norms = parse_obj_src(src)  # type: ignore[assignment]
     assert len(tris) == 2
     assert all(isinstance(tri, SmoothTriangle) for tri in tris)
 

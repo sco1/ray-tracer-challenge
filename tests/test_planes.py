@@ -7,6 +7,8 @@ from ray_tracer.rayple import Rayple, point, vector
 from ray_tracer.rays import Ray
 from ray_tracer.shapes import Plane
 
+DUMMY_INTER = Intersection(1, Plane(), 2, 3)
+
 PLANE_NORMAL_CASES = (
     (point(0, 0, 0), vector(0, 1, 0)),
     (point(10, 0, -10), vector(0, 1, 0)),
@@ -17,7 +19,7 @@ PLANE_NORMAL_CASES = (
 @pytest.mark.parametrize(("pt", "truth_normal"), PLANE_NORMAL_CASES)
 def test_plane_normal(pt: Rayple, truth_normal: Rayple) -> None:
     p = Plane()
-    assert p.normal_at(pt) == truth_normal
+    assert p.normal_at(pt, DUMMY_INTER) == truth_normal
 
 
 # We're just testing intersection points so we want to share a plane object since those only

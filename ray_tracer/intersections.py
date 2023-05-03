@@ -131,7 +131,7 @@ def prepare_computations(
     # inverted so the surface is illuminated properly
     # We can roughly check this by seeing if the normal points away from the eye vector
     eye_v = -ray.direction
-    normal = inter.obj.normal_at(pt)
+    normal = inter.obj.normal_at(pt, inter)
     if dot(normal, eye_v) < 0:
         inside = True
         normal = -normal

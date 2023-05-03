@@ -40,7 +40,7 @@ def shaded_ray_sphere() -> None:
                 if hit := intersections.hit:
                     hit = intersections.hit
                     surface_point = r.position(hit.t)
-                    normal = hit.obj.normal_at(surface_point)
+                    normal = hit.obj.normal_at(surface_point, hit)
                     lit_color = lighting(
                         material=hit.obj.material,
                         obj=hit.obj,

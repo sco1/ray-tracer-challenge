@@ -3,9 +3,12 @@ import math
 import pytest
 
 from ray_tracer import NUMERIC_T
+from ray_tracer.intersections import Intersection
 from ray_tracer.rayple import Rayple, point, vector
 from ray_tracer.rays import Ray
 from ray_tracer.shapes import Cone
+
+DUMMY_INTER = Intersection(1, Cone(), 2, 3)
 
 CONE_INTERSECTION_CASES = (
     (point(0, 0, -5), vector(0, 0, 1), 5, 5),
@@ -63,4 +66,4 @@ CAPPED_CONE_NORMAL_CASES = (
 @pytest.mark.parametrize(("origin", "truth_normal"), CAPPED_CONE_NORMAL_CASES)
 def test_cone_normal(origin: Rayple, truth_normal: Rayple) -> None:
     c = Cone()
-    assert c._local_normal_at(origin) == truth_normal
+    assert c._local_normal_at(origin, DUMMY_INTER) == truth_normal

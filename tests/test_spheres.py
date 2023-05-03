@@ -9,6 +9,8 @@ from ray_tracer.rays import Ray
 from ray_tracer.shapes import Sphere
 from ray_tracer.transforms import Matrix, rot_z, scaling, translation
 
+DUMMY_INTER = Intersection(1, Sphere(), 2, 3)
+
 RT_2 = math.sqrt(2)
 RT_3 = math.sqrt(3)
 
@@ -63,12 +65,12 @@ UNIT_SPHERE_NORMAL_CASES = (
 def test_unit_sphere_normal(query: Rayple, truth_vector: Rayple) -> None:
     s = Sphere()
 
-    assert s.normal_at(query) == truth_vector
+    assert s.normal_at(query, DUMMY_INTER) == truth_vector
 
 
 def test_unit_sphere_normal_is_normalized() -> None:
     s = Sphere()
-    n = s.normal_at(point(RT_3 / 3, RT_3 / 3, RT_3 / 3))
+    n = s.normal_at(point(RT_3 / 3, RT_3 / 3, RT_3 / 3), DUMMY_INTER)
 
     assert n == n.normalize()
 
@@ -76,7 +78,7 @@ def test_unit_sphere_normal_is_normalized() -> None:
 def test_normalize_non_point_raises() -> None:
     s = Sphere()
     with pytest.raises(ValueError):
-        _ = s.normal_at(vector(1, 0, 0))
+        _ = s.normal_at(vector(1, 0, 0), DUMMY_INTER)
 
 
 def test_normal_translated_sphere() -> None:
@@ -84,7 +86,7 @@ def test_normal_translated_sphere() -> None:
 
     query = point(0, 1 + RT_2 / 2, -RT_2 / 2)
     truth_vector = vector(0, RT_2 / 2, -RT_2 / 2)
-    assert s.normal_at(query) == truth_vector
+    assert s.normal_at(query, DUMMY_INTER) == truth_vector
 
 
 def test_normal_transformed_sphere() -> None:
@@ -94,4 +96,4 @@ def test_normal_transformed_sphere() -> None:
     query = point(0, RT_2 / 2, -RT_2 / 2)
     truth_vector = vector(0, 0.97014, -0.24253)
 
-    assert s.normal_at(query) == truth_vector
+    assert s.normal_at(query, DUMMY_INTER) == truth_vector

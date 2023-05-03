@@ -1,9 +1,12 @@
 import math
 
+from ray_tracer.intersections import Intersection
 from ray_tracer.rayple import point, vector
 from ray_tracer.rays import Ray
 from ray_tracer.shapes import Group, Sphere
 from ray_tracer.transforms import rot, scaling, translation
+
+DUMMY_INTER = Intersection(1, Group(), 2, 3)
 
 
 def test_adding_child() -> None:
@@ -88,5 +91,5 @@ def test_child_normal_at() -> None:
     s = Sphere(transform=translation(5, 0, 0))
     g2.add_child(s)
 
-    norm = s.normal_at(point(1.7321, 1.1547, -5.5774))
+    norm = s.normal_at(point(1.7321, 1.1547, -5.5774), DUMMY_INTER)
     assert norm == vector(0.28570, 0.42854, -0.85716)

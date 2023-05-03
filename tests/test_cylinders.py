@@ -1,9 +1,12 @@
 import pytest
 
 from ray_tracer import NUMERIC_T
+from ray_tracer.intersections import Intersection
 from ray_tracer.rayple import Rayple, point, vector
 from ray_tracer.rays import Ray
 from ray_tracer.shapes import Cylinder
+
+DUMMY_INTER = Intersection(1, Cylinder(), 2, 3)
 
 CYLINDER_MISS_CASES = (
     (point(1, 0, 0), vector(0, 1, 0)),
@@ -52,7 +55,7 @@ CYLINDER_NORMAL_CASES = (
 @pytest.mark.parametrize(("origin", "truth_normal"), CYLINDER_NORMAL_CASES)
 def test_cylinder_normal(origin: Rayple, truth_normal: Rayple) -> None:
     cyl = Cylinder()
-    assert cyl._local_normal_at(origin) == truth_normal
+    assert cyl._local_normal_at(origin, DUMMY_INTER) == truth_normal
 
 
 TRUNCATED_CYL_INTERSECT_CASES = (
@@ -109,4 +112,4 @@ CAPPED_CYL_NORMAL_CASES = (
 @pytest.mark.parametrize(("origin", "truth_normal"), CAPPED_CYL_NORMAL_CASES)
 def test_capped_cylinder_normal(origin: Rayple, truth_normal: Rayple) -> None:
     cyl = Cylinder(minimum=1, maximum=2, closed=True)
-    assert cyl._local_normal_at(origin) == truth_normal
+    assert cyl._local_normal_at(origin, DUMMY_INTER) == truth_normal

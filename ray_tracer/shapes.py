@@ -48,18 +48,25 @@ class Shape:
         transformed_ray = ray.transform(self.transform.inv())
         return self._local_intersect(transformed_ray)
 
-    def _local_normal_at(self, local_point: Rayple) -> Rayple:  # pragma: no cover
+    def _local_normal_at(
+        self, local_point: Rayple, hit: Intersection
+    ) -> Rayple:  # pragma: no cover
         raise NotImplementedError
 
-    def normal_at(self, query: Rayple) -> Rayple:
-        """Calculate the normal vector from the shape at the provided surface point."""
+    def normal_at(self, query: Rayple, hit: Intersection) -> Rayple:
+        """
+        Calculate the normal vector from the shape at the provided surface point.
+
+        `hit` is passed through to assist with normal interpolation for `SmoothTriangle`; it is
+        unused otherwise.
+        """
         if query.w != RaypleType.POINT:
             raise ValueError("Query location must be a point.")
 
         # To account for transformations, we have to shift the query point from world space to the
         # object space, otherwise our initial normal is not going to be accurate
         local_point = self.world_to_object(query)
-        local_normal = self._local_normal_at(local_point)
+        local_normal = self._local_normal_at(local_point, hit)
 
         # Once we've shifted to object space to get the object normal, we need to shift this back to
         # the world space by transforming it with the inverse transpose of the sphere's
@@ -120,7 +127,7 @@ class Sphere(Shape):
 
         return Intersections(intersections)
 
-    def _local_normal_at(self, local_point: Rayple) -> Rayple:
+    def _local_normal_at(self, local_point: Rayple, hit: Intersection) -> Rayple:
         return local_point - point(0, 0, 0)
 
 
@@ -144,7 +151,7 @@ class Plane(Shape):
         t = -transformed_ray.origin.y / transformed_ray.direction.y
         return Intersections([Intersection(t, self)])
 
-    def _local_normal_at(self, local_point: Rayple) -> Rayple:
+    def _local_normal_at(self, local_point: Rayple, hit: Intersection) -> Rayple:
         # The normal of a plane is constant everywhere
         return vector(0, 1, 0)
 
@@ -177,7 +184,7 @@ class Cube(Shape):
         else:
             return Intersections([Intersection(t_min, self), Intersection(t_max, self)])
 
-    def _local_normal_at(self, local_point: Rayple) -> Rayple:
+    def _local_normal_at(self, local_point: Rayple, hit: Intersection) -> Rayple:
         # We know which plane we're on because it has the component with the largest absolute value
         # In the ideal case it will be the component that equals 1, but we have floats so we can't
         # get by that easy
@@ -306,7 +313,7 @@ class Cylinder(Shape):
 
         return inters
 
-    def _local_normal_at(self, local_point: Rayple) -> Rayple:
+    def _local_normal_at(self, local_point: Rayple, hit: Intersection) -> Rayple:
         # If the point lies less than one unit from the y axis, and is within EPSILON of one of the
         # caps, then it must be on one of the caps
         dist = local_point.x**2 + local_point.z**2
@@ -416,7 +423,7 @@ class Cone(Shape):
 
         return inters
 
-    def _local_normal_at(self, local_point: Rayple) -> Rayple:
+    def _local_normal_at(self, local_point: Rayple, hit: Intersection) -> Rayple:
         # Cap radius is directly related to y; if the point lies less than y units from the y axis,
         # and is within EPSILON of one of the caps, then it must be on one of the caps
         dist = local_point.x**2 + local_point.z**2
@@ -454,7 +461,7 @@ class Group(Shape):
         all_inters.sort()
         return all_inters
 
-    def _local_normal_at(self, local_point: Rayple) -> Rayple:
+    def _local_normal_at(self, local_point: Rayple, hit: Intersection) -> Rayple:
         raise NotImplementedError("Groups shold be delegating this call to children.")
 
     def add_child(self, other: Shape) -> None:
@@ -512,7 +519,7 @@ class Triangle(Shape):
 
         return inters
 
-    def _local_normal_at(self, local_point: Rayple) -> Rayple:
+    def _local_normal_at(self, local_point: Rayple, hit: Intersection) -> Rayple:
         # Normal vector is the same for the entire triangle
         return self.norm
 
@@ -528,3 +535,7 @@ class SmoothTriangle(Triangle):
     n1: Rayple
     n2: Rayple
     n3: Rayple
+
+    def _local_normal_at(self, local_point: Rayple, hit: Intersection) -> Rayple:
+        norm = (self.n2 * hit.u) + (self.n3 * hit.v) + (self.n1 * (1 - hit.u - hit.v))
+        return norm

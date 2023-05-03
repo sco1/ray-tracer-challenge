@@ -57,13 +57,16 @@ def parse_obj_src(
             x, y, z = (float(val) for val in line.split()[1:])
             all_vertices.append(point(x, y, z))
         elif line.startswith("f"):
+            triangles: list[Triangle] | list[SmoothTriangle]
             if "/" in line:
                 # Smooth triangles
                 vertices = []
                 normals = []
                 for comp in line.split()[1:]:
+                    # Since we're assuming a properly formatted OBJ file we can fall back to 0 for
+                    # an unspecified texture vertex (we're ignoring it anyway)
                     vertex_idx, _, normal_idx = (
-                        int(val) - 1 if val else None for val in comp.split("/")
+                        int(val) - 1 if val else 0 for val in comp.split("/")
                     )
                     vertices.append(all_vertices[vertex_idx])
                     normals.append(all_vertex_normals[normal_idx])

@@ -1,8 +1,12 @@
 import pytest
 
+from ray_tracer.intersections import Intersection
 from ray_tracer.rayple import point, vector
 from ray_tracer.rays import Ray
 from ray_tracer.shapes import Triangle
+
+DUMMY_TRI = Triangle(p1=point(0, 1, 0), p2=point(-1, 0, 0), p3=point(1, 0, 0))
+DUMMY_INTER = Intersection(1, DUMMY_TRI, 2, 3)
 
 
 def test_triangle_compute_on_init() -> None:
@@ -16,9 +20,9 @@ def test_triangle_compute_on_init() -> None:
 def test_triangle_normal() -> None:
     t = Triangle(p1=point(0, 1, 0), p2=point(-1, 0, 0), p3=point(1, 0, 0))
 
-    n1 = t._local_normal_at(point(0, 0.5, 0))
-    n2 = t._local_normal_at(point(-0.5, 0.75, 0))
-    n3 = t._local_normal_at(point(0.5, 0.25, 0))
+    n1 = t._local_normal_at(point(0, 0.5, 0), DUMMY_INTER)
+    n2 = t._local_normal_at(point(-0.5, 0.75, 0), DUMMY_INTER)
+    n3 = t._local_normal_at(point(0.5, 0.25, 0), DUMMY_INTER)
 
     assert n1 == t.norm
     assert n2 == t.norm

@@ -1,9 +1,12 @@
 import pytest
 
 from ray_tracer import NUMERIC_T
+from ray_tracer.intersections import Intersection
 from ray_tracer.rayple import Rayple, point, vector
 from ray_tracer.rays import Ray
 from ray_tracer.shapes import Cube
+
+DUMMY_INTER = Intersection(1, Cube(), 2, 3)
 
 CUBE_RAY_INTERSECTION_CASES = (
     (point(5, 0.5, 0), vector(-1, 0, 0), 4, 6),
@@ -63,4 +66,4 @@ CUBE_NORMAL_CASES = (
 @pytest.mark.parametrize(("origin", "truth_normal"), CUBE_NORMAL_CASES)
 def test_cube_normal(origin: Rayple, truth_normal: Rayple) -> None:
     c = Cube()
-    assert c._local_normal_at(origin) == truth_normal
+    assert c._local_normal_at(origin, DUMMY_INTER) == truth_normal
